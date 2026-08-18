@@ -1,0 +1,21 @@
+{
+  "name": "1m26s_18_client",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n viewer,controller -c blue,magenta \"npm run dev -w apps/viewer\" \"npm run dev -w apps/controller\"",
+    "dev:viewer": "npm run dev -w apps/viewer",
+    "dev:controller": "npm run dev -w apps/controller",
+    "build": "npm run build -w apps/viewer && npm run build -w apps/controller",
+    "lint": "npm run lint -w apps/viewer && npm run lint -w apps/controller",
+    "preview": "node scripts/preview.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

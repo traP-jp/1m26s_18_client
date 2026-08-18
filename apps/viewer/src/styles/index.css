@@ -1,0 +1,549 @@
+html,
+body,
+#root {
+  height: 100%;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Shared song card */
+.viewer-song-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.viewer-song-card__thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-penlight-purple), var(--color-penlight-cyan));
+  flex-shrink: 0;
+}
+.viewer-song-card__meta {
+  display: flex;
+  flex-direction: column;
+}
+.viewer-song-card__title {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.viewer-song-card__artist {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.viewer-eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+  text-transform: uppercase;
+}
+.viewer-title {
+  margin: var(--space-2) 0;
+  font-size: 1.8rem;
+}
+.viewer-subtitle {
+  margin: 0 0 var(--space-5);
+  color: var(--color-text-secondary);
+}
+.viewer-panel-title {
+  margin: 0 0 var(--space-3);
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+}
+.viewer-hint {
+  margin: var(--space-2) 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* URL input screen */
+.viewer-url-input {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+.viewer-url-input__card {
+  width: min(520px, 100%);
+}
+.viewer-url-input__form {
+  display: flex;
+  gap: var(--space-3);
+}
+.viewer-url-input__field {
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-size: 1rem;
+}
+.viewer-url-input__field:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+.viewer-url-input__result {
+  margin-top: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Lobby screen */
+.viewer-lobby {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-6);
+}
+.viewer-lobby__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.viewer-lobby__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-5);
+  align-items: start;
+}
+.viewer-lobby__footer {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: var(--space-5);
+}
+
+/* Live screen */
+.viewer-live {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-primary);
+}
+.viewer-live__stage-area {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+.viewer-stage-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-stage);
+  overflow: hidden;
+}
+.viewer-stage-placeholder__bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 28%, #2a1440 0%, #0c0a16 55%, #050509 100%);
+}
+.viewer-stage-placeholder__truss {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 0 var(--space-6);
+  background: repeating-linear-gradient(45deg, #1a1a24, #1a1a24 6px, #23232f 6px, #23232f 12px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+.viewer-stage-placeholder__truss-light {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+}
+.viewer-stage-placeholder__spotlight {
+  position: absolute;
+  top: 22px;
+  width: 160px;
+  height: 72%;
+  transform-origin: top center;
+  animation: viewer-spotlight-sway 6s ease-in-out infinite alternate;
+}
+.viewer-stage-placeholder__spotlight--left {
+  left: 8%;
+  animation-delay: -1s;
+}
+.viewer-stage-placeholder__spotlight--right {
+  right: 8%;
+  animation-delay: -3s;
+}
+.viewer-stage-placeholder__spotlight--center {
+  left: 50%;
+  width: 220px;
+  animation-name: viewer-spotlight-sway-center;
+  animation-duration: 7s;
+}
+/* Each beam is two layers: a wide soft "halo" (blurred) and a narrow bright
+   "core" (sharp) — real stage lights read as a hot center inside a soft glow,
+   a flat single gradient looked cheap by comparison. */
+.viewer-stage-placeholder__spotlight-halo {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  filter: blur(6px);
+  clip-path: polygon(44% 0%, 56% 0%, 100% 100%, 0% 100%);
+}
+.viewer-stage-placeholder__spotlight-core {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  filter: blur(0.5px);
+  clip-path: polygon(49% 0%, 51% 0%, 62% 100%, 38% 100%);
+}
+.viewer-stage-placeholder__spotlight--left .viewer-stage-placeholder__spotlight-halo {
+  background: linear-gradient(to bottom, rgba(0, 229, 255, 0.32), transparent 82%);
+}
+.viewer-stage-placeholder__spotlight--left .viewer-stage-placeholder__spotlight-core {
+  background: linear-gradient(
+    to bottom,
+    rgba(205, 250, 255, 0.9),
+    rgba(0, 229, 255, 0.28) 55%,
+    transparent 90%
+  );
+}
+.viewer-stage-placeholder__spotlight--right .viewer-stage-placeholder__spotlight-halo {
+  background: linear-gradient(to bottom, rgba(255, 45, 149, 0.3), transparent 82%);
+}
+.viewer-stage-placeholder__spotlight--right .viewer-stage-placeholder__spotlight-core {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 222, 240, 0.9),
+    rgba(255, 45, 149, 0.28) 55%,
+    transparent 90%
+  );
+}
+.viewer-stage-placeholder__spotlight--center .viewer-stage-placeholder__spotlight-halo {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.36), transparent 84%);
+}
+.viewer-stage-placeholder__spotlight--center .viewer-stage-placeholder__spotlight-core {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.96),
+    rgba(220, 245, 255, 0.32) 55%,
+    transparent 90%
+  );
+}
+@keyframes viewer-spotlight-sway {
+  from {
+    transform: rotate(-4deg);
+  }
+  to {
+    transform: rotate(4deg);
+  }
+}
+@keyframes viewer-spotlight-sway-center {
+  from {
+    transform: translateX(-50%) rotate(-2deg);
+  }
+  to {
+    transform: translateX(-50%) rotate(2deg);
+  }
+}
+.viewer-stage-placeholder__haze {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18%;
+  height: 48%;
+  overflow: hidden;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+.viewer-stage-placeholder__haze-cloud {
+  position: absolute;
+  bottom: 0;
+  width: 60%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(180, 200, 255, 0.14), transparent 70%);
+  filter: blur(18px);
+  animation-name: viewer-haze-drift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+.viewer-stage-placeholder__haze-cloud--a {
+  left: -10%;
+  animation-duration: 26s;
+}
+.viewer-stage-placeholder__haze-cloud--b {
+  left: 25%;
+  animation-duration: 32s;
+  animation-delay: -8s;
+  background: radial-gradient(ellipse at center, rgba(255, 200, 230, 0.1), transparent 70%);
+}
+.viewer-stage-placeholder__haze-cloud--c {
+  left: 55%;
+  animation-duration: 28s;
+  animation-delay: -14s;
+}
+@keyframes viewer-haze-drift {
+  from {
+    transform: translateX(-6%);
+  }
+  to {
+    transform: translateX(6%);
+  }
+}
+.viewer-stage-placeholder__floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34%;
+  background:
+    linear-gradient(to top, rgba(20, 10, 35, 0.9), rgba(20, 10, 35, 0) 100%),
+    repeating-linear-gradient(
+      to top,
+      rgba(255, 255, 255, 0.05) 0,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px,
+      transparent 24px
+    );
+}
+.viewer-stage-placeholder__label {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-2);
+  color: var(--color-text-muted);
+  font-family: var(--font-hud);
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+/* Back screen (jumbotron behind Miku, showing a visualizer + lyrics) */
+.viewer-backscreen {
+  position: absolute;
+  left: 50%;
+  top: 64px;
+  transform: translateX(-50%);
+  z-index: 1;
+  width: min(780px, 84%);
+  height: 40%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+.viewer-backscreen__frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+  border-radius: var(--radius-md);
+  border: 3px solid #14141c;
+  outline: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, #050710 0%, #0a0f1a 100%);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6), inset 0 0 40px rgba(0, 229, 255, 0.05);
+  overflow: hidden;
+  padding: var(--space-4);
+}
+.viewer-backscreen__scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.035) 0px,
+    rgba(255, 255, 255, 0.035) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+.viewer-backscreen__visualizer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 60%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 var(--space-4);
+}
+.viewer-backscreen__bar {
+  width: 5px;
+  height: 12%;
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(to top, rgba(0, 229, 255, 0.85), rgba(0, 229, 255, 0));
+  animation-name: viewer-backscreen-bar;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+@keyframes viewer-backscreen-bar {
+  from {
+    height: 8%;
+  }
+  to {
+    height: 82%;
+  }
+}
+.viewer-backscreen__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.6) 100%);
+}
+/* Lyric ticker sits in its own strip along the top edge of the screen — Miku
+   stands in front of the lower/center of the frame, so the visualizer (which
+   spans the full width) can peek out on either side of her while the lyric
+   text stays in a band she never reaches. */
+.viewer-backscreen__text {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 70px;
+  padding: var(--space-3) var(--space-4);
+  background: linear-gradient(to bottom, rgba(3, 4, 8, 0.8) 60%, transparent);
+  font-size: 2.3rem;
+  font-weight: 700;
+  color: #eafcff;
+  text-align: center;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 14px rgba(0, 229, 255, 0.85), 0 0 30px rgba(0, 229, 255, 0.4);
+}
+.viewer-backscreen__stand {
+  width: 8px;
+  height: 26px;
+  flex-shrink: 0;
+  background: linear-gradient(#1c1c26, #0a0a0f);
+}
+
+/* Miku model — bounded by BOTH top and bottom (no fixed height) so her box
+   can never creep above the truss/header on a short viewport: it just shrinks
+   to whatever room is actually left between the two, and the auto-fitting
+   camera in MikuModel3D adapts to that. */
+.viewer-miku {
+  position: absolute;
+  left: 50%;
+  top: 70px;
+  bottom: 170px;
+  transform: translateX(-50%);
+  z-index: 2;
+  width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+.viewer-miku__pool {
+  position: absolute;
+  bottom: -8px;
+  width: 220px;
+  height: 56px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 229, 255, 0.35), transparent 70%);
+  filter: blur(2px);
+}
+.viewer-miku__canvas {
+  position: absolute;
+  inset: 0;
+  filter: drop-shadow(0 0 18px rgba(57, 197, 187, 0.35));
+  /* cheap compositor-only floor reflection (no extra WebGL render pass) */
+  -webkit-box-reflect: below 2px
+    linear-gradient(to bottom, transparent 45%, rgba(255, 255, 255, 0.12) 100%);
+}
+.viewer-miku__canvas canvas {
+  display: block;
+}
+.viewer-miku__caption {
+  position: relative;
+  margin-top: var(--space-1);
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.05em;
+}
+
+/* Header overlay (song info) */
+.viewer-live__header {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  right: 0;
+  z-index: var(--z-chrome);
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  background: linear-gradient(to bottom, rgba(5, 5, 9, 0.75), transparent);
+}
+.viewer-song-card--compact .viewer-song-card__thumb {
+  width: 40px;
+  height: 40px;
+}
+.viewer-song-card--compact .viewer-song-card__title {
+  font-size: 0.95rem;
+}
+.viewer-song-card--compact .viewer-song-card__artist {
+  font-size: 0.75rem;
+}
+
+.viewer-live__audience {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: var(--z-audience);
+  padding: var(--space-4) var(--space-5) var(--space-2);
+  height: 280px;
+  overflow: hidden;
+  /* faint horizontal stage-wash band so the crowd silhouettes read against it,
+     like light spilling from the stage over the audience's shoulders */
+  background: linear-gradient(
+    to top,
+    rgba(8, 8, 13, 0.92) 0%,
+    rgba(24, 20, 40, 0.55) 42%,
+    rgba(20, 40, 55, 0.25) 62%,
+    transparent 100%
+  );
+}
+/* A lit ground line right where the crowd's feet land — without it there's no
+   visible floor for anyone to actually be standing on. */
+.viewer-live__audience::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(0, 229, 255, 0.35) 20%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(255, 45, 149, 0.35) 80%,
+    transparent
+  );
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
+}
+.viewer-live__hud {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-6);
+  background: var(--color-bg-surface);
+  border-top: 1px solid var(--color-border);
+  z-index: var(--z-chrome);
+}
+.viewer-live__hud-item--grow {
+  flex: 1;
+  max-width: 320px;
+}
+.viewer-live__progress {
+  padding: 0 var(--space-6) var(--space-4);
+  background: var(--color-bg-surface);
+}

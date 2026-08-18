@@ -1,0 +1,364 @@
+/* Button */
+.ui-button {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.ui-button:active {
+  transform: scale(0.96);
+}
+.ui-button--primary {
+  background: var(--color-accent);
+  color: #041014;
+  box-shadow: var(--glow-md);
+}
+.ui-button--primary:hover {
+  box-shadow: var(--glow-lg);
+}
+.ui-button--secondary {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+.ui-button--secondary:hover {
+  border-color: var(--color-accent);
+}
+.ui-button--ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+.ui-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Panel */
+.ui-panel {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+.ui-panel--glow {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 24px rgba(0, 229, 255, 0.15);
+}
+
+/* ProgressBar */
+.ui-progressbar {
+  position: relative;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-verse);
+  overflow: hidden;
+}
+.ui-progressbar__segment {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.ui-progressbar__segment--verse {
+  background: var(--color-verse);
+}
+.ui-progressbar__segment--chorus {
+  background: var(--color-chorus);
+  box-shadow: 0 0 10px var(--color-chorus);
+}
+.ui-progressbar__playhead {
+  position: absolute;
+  top: -3px;
+  width: 4px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-primary);
+  box-shadow: var(--glow-sm);
+  transform: translateX(-2px);
+}
+
+/* Gauge */
+.ui-gauge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.ui-gauge__header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+.ui-gauge__value {
+  font-family: var(--font-hud);
+  color: var(--color-text-primary);
+}
+.ui-gauge__track {
+  height: 14px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+.ui-gauge__fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  box-shadow: var(--glow-sm);
+  transition: width 0.4s ease;
+}
+
+/* ParticipantCounter */
+.ui-participant-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+.ui-participant-counter__count {
+  font-family: var(--font-hud);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-shadow: var(--glow-md);
+}
+.ui-participant-counter__label {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+/* RoomJoinCard */
+.ui-room-join {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.ui-room-join__qr {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: repeating-conic-gradient(#fff 0% 25%, #000 0% 50%) 0 0 / 12px 12px;
+  border-radius: var(--radius-sm);
+  color: #000;
+  font-family: var(--font-hud);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.ui-room-join__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.ui-room-join__label {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+.ui-room-join__code {
+  font-family: var(--font-hud);
+  font-size: 1.5rem;
+  letter-spacing: 0.1em;
+  color: var(--color-text-primary);
+}
+.ui-room-join__url {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* PenlightGrid: several depth rows of simple human silhouettes, each raising
+   two same-colored penlights overhead. Front row is closest/biggest/brightest;
+   further rows are smaller, dimmer and slightly desaturated (crowd depth/haze). */
+.ui-penlight-grid {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+.ui-penlight-grid__row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  transform-origin: 50% 100%;
+}
+.ui-penlight-grid__person {
+  position: relative;
+  width: 34px;
+  flex-shrink: 0;
+}
+.ui-penlight-grid__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+/* A curved stroke instead of straight rotated bars — reads as an actual raised
+   arm, and its silhouette picks up a faint tint of the person's own penlight
+   color so they don't look like flat grey cutouts. */
+.ui-penlight-grid__limb {
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  opacity: 0.9;
+  mix-blend-mode: screen;
+}
+.ui-penlight-grid__torso {
+  fill: rgba(126, 130, 152, 0.55);
+  stroke-width: 1.1;
+  stroke-opacity: 0.55;
+}
+.ui-penlight-grid__head {
+  fill: rgba(150, 155, 178, 0.62);
+  stroke-width: 1.1;
+  stroke-opacity: 0.55;
+}
+.ui-penlight-grid__joint {
+  fill: rgba(150, 155, 178, 0.6);
+}
+.ui-penlight-grid__leg {
+  fill: rgba(110, 114, 136, 0.55);
+}
+.ui-penlight-grid__foot {
+  fill: rgba(96, 100, 122, 0.6);
+}
+/* Grounds each person: without this the legs just end in empty space and the
+   whole crowd reads as cardboard cutouts floating over the stage. */
+.ui-penlight-grid__shadow {
+  fill: rgba(0, 0, 0, 0.55);
+  filter: blur(1.5px);
+}
+.ui-penlight-grid__glow {
+  filter: blur(2.5px);
+}
+.ui-penlight-grid__core {
+  opacity: 0.95;
+}
+.ui-penlight-grid__hotspot {
+  fill: #ffffff;
+  opacity: 0.9;
+}
+/* Foreground "neighbors": huge, dark, cropped by the screen edge — like the
+   back of someone's head/shoulder intruding into a phone video shot from
+   inside the crowd. This is what actually sells "you are standing here too",
+   since the depth rows alone read as a distant toy crowd. */
+.ui-penlight-grid__neighbor {
+  position: absolute;
+  bottom: -10px;
+  width: 140px;
+  height: 300px;
+  z-index: 4;
+  pointer-events: none;
+  filter: brightness(0.32) saturate(0.7);
+  opacity: 0.92;
+}
+.ui-penlight-grid__neighbor--left {
+  left: -30px;
+}
+.ui-penlight-grid__neighbor--right {
+  right: -30px;
+  transform: scaleX(-1);
+}
+
+/* ColorPicker */
+.ui-color-picker {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.ui-color-picker__swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.ui-color-picker__swatch:hover {
+  transform: scale(1.1);
+}
+.ui-color-picker__swatch--selected {
+  border-color: var(--color-text-primary);
+  box-shadow: var(--glow-md);
+}
+
+/* ReactionOverlay */
+.ui-reaction-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: var(--z-reactions);
+}
+.ui-reaction-overlay__item {
+  position: absolute;
+  bottom: 0;
+  font-size: 2rem;
+}
+.ui-reaction-overlay__image {
+  display: block;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+}
+.ui-reaction-overlay__item--stamp {
+  animation: ui-reaction-pop 1.4s ease-out forwards;
+}
+.ui-reaction-overlay__item--balloon {
+  animation: ui-reaction-float 3.2s ease-in forwards;
+}
+@keyframes ui-reaction-pop {
+  0% {
+    transform: translateY(0) scale(0.4);
+    opacity: 0;
+  }
+  20% {
+    transform: translateY(-20px) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-120px) scale(1);
+    opacity: 0;
+  }
+}
+@keyframes ui-reaction-float {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-420px) translateX(20px);
+    opacity: 0;
+  }
+}
+
+/* IconToggleButton */
+.ui-icon-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ui-icon-toggle--active {
+  background: var(--color-danger);
+  color: #1a0206;
+  border-color: var(--color-danger);
+  box-shadow: var(--glow-md);
+}
+.ui-icon-toggle__icon {
+  font-size: 0.7rem;
+}

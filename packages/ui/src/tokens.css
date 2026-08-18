@@ -1,0 +1,77 @@
+:root {
+  /* Backgrounds */
+  --color-bg-primary: #08080d;
+  --color-bg-surface: #131320;
+  --color-bg-elevated: #1c1c2e;
+  --color-border: #2c2c42;
+
+  /* Text */
+  --color-text-primary: #f5f5f9;
+  --color-text-secondary: #9a9ab0;
+  --color-text-muted: #62627a;
+
+  /* Neon penlight palette (selectable colors) */
+  --color-penlight-pink: #ff2d95;
+  --color-penlight-cyan: #00e5ff;
+  --color-penlight-purple: #b026ff;
+  --color-penlight-green: #39ff14;
+  --color-penlight-yellow: #fff01f;
+  --color-penlight-orange: #ff8c00;
+  --color-penlight-blue: #2979ff;
+  --color-penlight-red: #ff1744;
+
+  /* Semantic accents */
+  --color-accent: var(--color-penlight-cyan);
+  --color-accent-strong: #22f7ff;
+  --color-success: #39ff14;
+  --color-warning: #fff01f;
+  --color-danger: #ff1744;
+
+  /* Song section coding */
+  --color-chorus: #ffd166;
+  --color-verse: #34344a;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
+
+  /* Neon glow shadows */
+  --glow-sm: 0 0 8px currentColor;
+  --glow-md: 0 0 16px currentColor, 0 0 4px currentColor;
+  --glow-lg: 0 0 32px currentColor, 0 0 8px currentColor;
+
+  /* Typography */
+  --font-body: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
+    system-ui, sans-serif;
+  --font-hud: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+
+  /* Layering */
+  --z-stage: 0;
+  --z-audience: 10;
+  --z-overlay: 20;
+  --z-reactions: 30;
+  --z-chrome: 40;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+}
