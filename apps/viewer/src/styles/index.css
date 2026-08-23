@@ -481,7 +481,20 @@ body,
   z-index: var(--z-chrome);
   padding: var(--space-4) var(--space-6);
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
   background: linear-gradient(to bottom, rgba(5, 5, 9, 0.75), transparent);
+}
+/* Demo-only switcher until real beat detection exists — lets you preview both
+   penlight wave patterns without needing audio analysis wired up yet. */
+.viewer-live__wave-demo {
+  display: flex;
+  gap: var(--space-2);
+}
+.viewer-live__wave-demo .ui-button {
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.8rem;
 }
 .viewer-song-card--compact .viewer-song-card__thumb {
   width: 40px;

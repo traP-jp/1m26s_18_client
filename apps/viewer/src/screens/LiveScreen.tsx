@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, Gauge, ParticipantCounter, PenlightGrid, ProgressBar, ReactionOverlay } from "ui";
-import type { ReactionItem } from "ui";
+import type { PenlightWaveMode, ReactionItem } from "ui";
 import { StagePlaceholder } from "../components/StagePlaceholder";
 import { BackScreen } from "../components/BackScreen";
 import { MikuModel3D } from "../components/MikuModel3D";
@@ -21,8 +21,15 @@ export interface LiveScreenProps {
   onSongEnd: () => void;
 }
 
+const WAVE_MODE_LABELS: Record<PenlightWaveMode, string> = {
+  idle: "静止",
+  fourFloor: "四つ打ち",
+  buildup: "溜めハイ!",
+};
+
 export function LiveScreen({ onSongEnd }: LiveScreenProps) {
   const [reactions, setReactions] = useState<ReactionItem[]>([]);
+  const [waveMode, setWaveMode] = useState<PenlightWaveMode>("idle");
 
   useEffect(() => {
     if (stampImages.length === 0) return;
@@ -61,10 +68,22 @@ export function LiveScreen({ onSongEnd }: LiveScreenProps) {
               <span className="viewer-song-card__artist">{mockSong.artist}</span>
             </div>
           </div>
+
+          <div className="viewer-live__wave-demo">
+            {(Object.keys(WAVE_MODE_LABELS) as PenlightWaveMode[]).map((mode) => (
+              <Button
+                key={mode}
+                variant={waveMode === mode ? "primary" : "ghost"}
+                onClick={() => setWaveMode(mode)}
+              >
+                {WAVE_MODE_LABELS[mode]}
+              </Button>
+            ))}
+          </div>
         </header>
 
         <div className="viewer-live__audience">
-          <PenlightGrid lights={mockPenlights} />
+          <PenlightGrid lights={mockPenlights} mode={waveMode} />
         </div>
         <ReactionOverlay items={reactions} onItemDone={removeReaction} />
       </div>
