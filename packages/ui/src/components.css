@@ -172,9 +172,10 @@
   color: var(--color-text-muted);
 }
 
-/* PenlightGrid: several depth rows of simple human silhouettes, each raising
-   two same-colored penlights overhead. Front row is closest/biggest/brightest;
-   further rows are smaller, dimmer and slightly desaturated (crowd depth/haze). */
+/* PenlightGrid: the penlights are the star, the people are just a hint of
+   silhouette behind them. Several depth rows of glowing rods, each pair held
+   by a barely-visible dark blob. Row 1 is closest/biggest/brightest; later
+   rows are smaller, dimmer, desaturated and blurred (crowd depth/haze). */
 .ui-penlight-grid {
   position: relative;
   height: 100%;
@@ -201,50 +202,93 @@
   height: 100%;
   overflow: visible;
 }
-/* A curved stroke instead of straight rotated bars — reads as an actual raised
-   arm, and its silhouette picks up a faint tint of the person's own penlight
-   color so they don't look like flat grey cutouts. */
-.ui-penlight-grid__limb {
-  stroke-width: 4.5;
-  stroke-linecap: round;
-  opacity: 0.9;
+/* The penlight rod itself: a colored body with a layered drop-shadow bloom
+   (set inline per-instance, since the color varies), plus a bright white
+   core stripe down the middle for the "lit from within" look. */
+.ui-penlight-grid__rod-body {
   mix-blend-mode: screen;
+  opacity: 0.95;
 }
-.ui-penlight-grid__torso {
-  fill: rgba(126, 130, 152, 0.55);
-  stroke-width: 1.1;
-  stroke-opacity: 0.55;
+.ui-penlight-grid__rod-core {
+  fill: #ffffff;
+  opacity: 0.75;
 }
-.ui-penlight-grid__head {
-  fill: rgba(150, 155, 178, 0.62);
-  stroke-width: 1.1;
-  stroke-opacity: 0.55;
+/* The person is deliberately just a hint, not a detailed figure — a soft
+   dark blob, mostly there to ground the rods rather than to be looked at. */
+.ui-penlight-grid__silhouette {
+  fill: rgba(4, 5, 10, 0.55);
+  filter: blur(3px);
 }
-.ui-penlight-grid__joint {
-  fill: rgba(150, 155, 178, 0.6);
-}
-.ui-penlight-grid__leg {
-  fill: rgba(110, 114, 136, 0.55);
-}
-.ui-penlight-grid__foot {
-  fill: rgba(96, 100, 122, 0.6);
-}
-/* Grounds each person: without this the legs just end in empty space and the
-   whole crowd reads as cardboard cutouts floating over the stage. */
+/* Grounds each person: without a contact shadow the crowd reads as cutouts
+   floating over the stage rather than standing on it. */
 .ui-penlight-grid__shadow {
   fill: rgba(0, 0, 0, 0.55);
   filter: blur(1.5px);
 }
-.ui-penlight-grid__glow {
-  filter: blur(2.5px);
+
+/* Wave modes: both rotate the whole shoulder->elbow->hand shape as one rigid
+   unit around the shoulder, rather than recomputing joint angles per frame. */
+.ui-penlight-grid__arm-group--four-floor {
+  animation: ui-penlight-four-floor 0.55s ease-in-out infinite;
 }
-.ui-penlight-grid__core {
-  opacity: 0.95;
+@keyframes ui-penlight-four-floor {
+  0%,
+  100% {
+    transform: rotate(-16deg);
+  }
+  50% {
+    transform: rotate(16deg);
+  }
 }
-.ui-penlight-grid__hotspot {
-  fill: #ffffff;
-  opacity: 0.9;
+.ui-penlight-grid__arm-group--buildup {
+  animation: ui-penlight-buildup-arm 2.2s ease-in-out infinite;
 }
+@keyframes ui-penlight-buildup-arm {
+  0%,
+  55% {
+    transform: rotate(145deg);
+  }
+  68% {
+    transform: rotate(160deg);
+  }
+  78% {
+    transform: rotate(-8deg);
+  }
+  86% {
+    transform: rotate(8deg);
+  }
+  92% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(145deg);
+  }
+}
+.ui-penlight-grid__person--buildup {
+  animation: ui-penlight-buildup-jump 2.2s ease-in-out infinite;
+}
+@keyframes ui-penlight-buildup-jump {
+  0%,
+  55% {
+    transform: translateY(0);
+  }
+  68% {
+    transform: translateY(2px);
+  }
+  78% {
+    transform: translateY(-14px);
+  }
+  86% {
+    transform: translateY(-8px);
+  }
+  92% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
 /* Foreground "neighbors": huge, dark, cropped by the screen edge — like the
    back of someone's head/shoulder intruding into a phone video shot from
    inside the crowd. This is what actually sells "you are standing here too",
@@ -265,6 +309,29 @@
 .ui-penlight-grid__neighbor--right {
   right: -30px;
   transform: scaleX(-1);
+}
+
+/* Bokeh: huge out-of-focus glowing bars along the very bottom edge, like
+   penlights held by people standing right against the "camera" — the
+   shallow-depth-of-field foreground you see in real concert photos/video. */
+.ui-penlight-grid__bokeh {
+  position: absolute;
+  left: -20px;
+  right: -20px;
+  bottom: -40px;
+  height: 46%;
+  z-index: 5;
+  pointer-events: none;
+  filter: blur(7px);
+  mix-blend-mode: screen;
+}
+.ui-penlight-grid__bokeh-bar {
+  position: absolute;
+  bottom: 0;
+  width: 22px;
+  border-radius: 999px;
+  opacity: 0.55;
+  transform-origin: bottom center;
 }
 
 /* ColorPicker */

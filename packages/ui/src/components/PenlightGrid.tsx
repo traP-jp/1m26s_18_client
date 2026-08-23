@@ -4,8 +4,11 @@ export interface PenlightItem {
   intensity: number;
 }
 
+export type PenlightWaveMode = "idle" | "fourFloor" | "buildup";
+
 export interface PenlightGridProps {
   lights: PenlightItem[];
+  mode?: PenlightWaveMode;
 }
 
 interface RowConfig {
@@ -14,104 +17,96 @@ interface RowConfig {
   opacity: number;
   bottomPct: number;
   saturate: number;
+  blurPx: number;
 }
 
-// index 0 = front row: closest to camera, biggest, brightest, standing at the very
-// bottom. Later rows sit further back: smaller, dimmer, slightly desaturated (haze).
 const ROWS: RowConfig[] = [
-  { key: "front", scale: 1.25, opacity: 1, bottomPct: 0, saturate: 1 },
-  { key: "mid", scale: 0.88, opacity: 0.78, bottomPct: 32, saturate: 0.82 },
-  { key: "back", scale: 0.6, opacity: 0.55, bottomPct: 58, saturate: 0.62 },
+  { key: "row1", scale: 1.25, opacity: 1, bottomPct: 0, saturate: 1, blurPx: 1.4 },
+  { key: "row2", scale: 0.88, opacity: 0.78, bottomPct: 32, saturate: 0.82, blurPx: 0.4 },
+  { key: "row3", scale: 0.6, opacity: 0.55, bottomPct: 58, saturate: 0.62, blurPx: 0 },
 ];
-// Out of every 6 people: 1 goes up front, 2 in the middle, 3 in back — smaller/denser
-// further back reads as a crowd receding into depth, similar to real perspective.
 const ROW_PATTERN = [2, 1, 2, 0, 1, 2];
 
-// Arm geometry: an actual shoulder->elbow->hand chain instead of one smooth
-// curve, so the elbow reads as a real joint. angleDeg is measured from
-// straight up (0deg), positive rotates toward +x. Coordinates live in the
-// person's 0..40 x 0..100 viewBox.
-const SHOULDER = { left: { x: 14, y: 32 }, right: { x: 26, y: 32 } };
-const UPPER_ARM = { angleDeg: 32, length: 15 };
-const FOREARM = { angleDeg: 68, length: 13 };
+const BASE = { left: { x: 15, y: 74 }, right: { x: 25, y: 74 } };
+const ROD_LEAN_DEG = 26;
+const ROD_LENGTH = 46;
 
-function polarPoint(origin: { x: number; y: number }, angleDeg: number, length: number) {
-  const rad = (angleDeg * Math.PI) / 180;
-  return { x: origin.x + length * Math.sin(rad), y: origin.y - length * Math.cos(rad) };
-}
-
-function PenlightGlow({
-  x,
-  y,
-  color,
-  intensity,
-}: {
-  x: number;
-  y: number;
-  color: string;
-  intensity: number;
-}) {
+function PenlightRod({ base, color }: { base: { x: number; y: number }; color: string }) {
+  const top = base.y - ROD_LENGTH;
+  const bodyHalfWidth = 2.75;
+  const coreHalfWidth = 1;
   return (
     <>
-      <circle
-        cx={x}
-        cy={y}
-        r={9}
-        className="ui-penlight-grid__glow"
+      <rect
+        x={base.x - bodyHalfWidth}
+        y={top}
+        width={bodyHalfWidth * 2}
+        height={ROD_LENGTH}
+        rx={bodyHalfWidth}
+        className="ui-penlight-grid__rod-body"
         fill={color}
-        style={{ opacity: 0.35 + intensity * 0.35 }}
+        style={{ filter: `drop-shadow(0 0 3px ${color}) drop-shadow(0 0 11px ${color})` }}
       />
-      <circle cx={x} cy={y} r={4.2} className="ui-penlight-grid__core" fill={color} />
-      <circle cx={x} cy={y} r={1.8} className="ui-penlight-grid__hotspot" />
+      <rect
+        x={base.x - coreHalfWidth}
+        y={top + ROD_LENGTH * 0.1}
+        width={coreHalfWidth * 2}
+        height={ROD_LENGTH * 0.7}
+        rx={coreHalfWidth}
+        className="ui-penlight-grid__rod-core"
+      />
     </>
   );
 }
 
-function Arm({ side, color }: { side: "left" | "right"; color: string }) {
+function PenlightLimb({
+  side,
+  color,
+  mode,
+  phaseIndex,
+}: {
+  side: "left" | "right";
+  color: string;
+  mode: PenlightWaveMode;
+  phaseIndex: number;
+}) {
   const mirror = side === "left" ? -1 : 1;
-  const shoulder = SHOULDER[side];
-  const elbow = polarPoint(shoulder, mirror * UPPER_ARM.angleDeg, UPPER_ARM.length);
-  const hand = polarPoint(elbow, mirror * FOREARM.angleDeg, FOREARM.length);
+  const base = BASE[side];
+
+  const groupClass = [
+    "ui-penlight-grid__arm-group",
+    mode === "fourFloor" && "ui-penlight-grid__arm-group--four-floor",
+    mode === "buildup" && "ui-penlight-grid__arm-group--buildup",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <>
-      <line
-        x1={shoulder.x}
-        y1={shoulder.y}
-        x2={elbow.x}
-        y2={elbow.y}
-        className="ui-penlight-grid__limb"
-        stroke={color}
-      />
-      <line
-        x1={elbow.x}
-        y1={elbow.y}
-        x2={hand.x}
-        y2={hand.y}
-        className="ui-penlight-grid__limb"
-        stroke={color}
-      />
-      <circle cx={shoulder.x} cy={shoulder.y} r={2.6} className="ui-penlight-grid__joint" />
-      <circle cx={elbow.x} cy={elbow.y} r={2.2} className="ui-penlight-grid__joint" />
-      <PenlightGlowAt point={hand} color={color} />
-    </>
+    <g
+      className={groupClass}
+      style={{
+        transformOrigin: `${base.x}px ${base.y}px`,
+        animationDelay: `${-(phaseIndex % 6) * 0.09}s`,
+      }}
+    >
+      {/* static outward lean lives here (SVG attribute), independent of the
+          CSS-animated swing on the wrapping group above */}
+      <g transform={`rotate(${mirror * ROD_LEAN_DEG} ${base.x} ${base.y})`}>
+        <PenlightRod base={base} color={color} />
+      </g>
+    </g>
   );
 }
 
-function PenlightGlowAt({
-  point,
+function PersonMarkup({
   color,
+  mode = "idle",
+  phaseIndex = 0,
 }: {
-  point: { x: number; y: number };
   color: string;
+  mode?: PenlightWaveMode;
+  phaseIndex?: number;
 }) {
-  return <PenlightGlow x={point.x} y={point.y} color={color} intensity={0.7} />;
-}
-
-/** A standing silhouette: head, torso, two legs planted on the ground (with a
- * contact shadow) and two jointed arms holding penlights overhead. Everything
- * lives in a 0..40 x 0..100 viewBox so the whole figure scales as one unit. */
-function PersonMarkup({ color }: { color: string }) {
   return (
     <svg
       className="ui-penlight-grid__svg"
@@ -120,52 +115,44 @@ function PersonMarkup({ color }: { color: string }) {
       fill="none"
     >
       <ellipse cx={20} cy={97} rx={13} ry={2.6} className="ui-penlight-grid__shadow" />
+      <ellipse cx={20} cy={80} rx={10} ry={15} className="ui-penlight-grid__silhouette" />
 
-      <Arm side="left" color={color} />
-      <Arm side="right" color={color} />
-
-      <rect x={12} y={62} width={7} height={32} rx={3} className="ui-penlight-grid__leg" />
-      <rect x={21} y={62} width={7} height={32} rx={3} className="ui-penlight-grid__leg" />
-      <rect x={10} y={91} width={10} height={6} rx={3} className="ui-penlight-grid__foot" />
-      <rect x={20} y={91} width={10} height={6} rx={3} className="ui-penlight-grid__foot" />
-
-      <rect
-        x={10}
-        y={28}
-        width={20}
-        height={36}
-        rx={9}
-        className="ui-penlight-grid__torso"
-        stroke={color}
-      />
-      <circle cx={20} cy={20} r={9} className="ui-penlight-grid__head" stroke={color} />
+      <PenlightLimb side="left" color={color} mode={mode} phaseIndex={phaseIndex} />
+      <PenlightLimb side="right" color={color} mode={mode} phaseIndex={phaseIndex} />
     </svg>
   );
 }
 
-function Person({ light }: { light: PenlightItem }) {
+function Person({
+  light,
+  mode,
+  phaseIndex,
+}: {
+  light: PenlightItem;
+  mode: PenlightWaveMode;
+  phaseIndex: number;
+}) {
+  const personClass = [
+    "ui-penlight-grid__person",
+    mode === "buildup" && "ui-penlight-grid__person--buildup",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <span
-      className="ui-penlight-grid__person"
-      style={{ height: `${96 + light.intensity * 26}px` }}
+      className={personClass}
+      style={{
+        height: `${96 + light.intensity * 26}px`,
+        animationDelay: mode === "buildup" ? `${-(phaseIndex % 6) * 0.09}s` : undefined,
+      }}
     >
-      <PersonMarkup color={light.color} />
+      <PersonMarkup color={light.color} mode={mode} phaseIndex={phaseIndex} />
     </span>
   );
 }
 
-// The two people nearest the "camera" — i.e. nearest the viewer, who is meant
-// to feel like part of the crowd too. Big, dark (barely lit by the stage),
-// cropped off the bottom/side edges, the way your own neighbor's shoulder and
-// the back of someone's head intrude into frame in a phone video shot from
-// inside a real crowd.
-function ForegroundNeighbor({
-  color,
-  side,
-}: {
-  color: string;
-  side: "left" | "right";
-}) {
+function ForegroundNeighbor({ color, side }: { color: string; side: "left" | "right" }) {
   return (
     <span className={`ui-penlight-grid__neighbor ui-penlight-grid__neighbor--${side}`}>
       <PersonMarkup color={color} />
@@ -173,7 +160,36 @@ function ForegroundNeighbor({
   );
 }
 
-export function PenlightGrid({ lights }: PenlightGridProps) {
+function ForegroundBokeh({ lights, mode }: { lights: PenlightItem[]; mode: PenlightWaveMode }) {
+  const bars = lights.slice(0, 9);
+  const barClass = [
+    "ui-penlight-grid__bokeh-bar",
+    mode === "fourFloor" && "ui-penlight-grid__arm-group--four-floor",
+    mode === "buildup" && "ui-penlight-grid__arm-group--buildup",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <div className="ui-penlight-grid__bokeh">
+      {bars.map((light, i) => (
+        <span
+          key={light.id}
+          className={barClass}
+          style={{
+            backgroundColor: light.color,
+            boxShadow: `0 0 22px ${light.color}, 0 0 48px ${light.color}`,
+            height: `${52 + ((i * 37) % 42)}%`,
+            left: `${(i / bars.length) * 100}%`,
+            animationDelay: `${-(i % 6) * 0.09}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+export function PenlightGrid({ lights, mode = "idle" }: PenlightGridProps) {
   const rows: PenlightItem[][] = ROWS.map(() => []);
   lights.forEach((light, i) => {
     rows[ROW_PATTERN[i % ROW_PATTERN.length]].push(light);
@@ -189,20 +205,21 @@ export function PenlightGrid({ lights }: PenlightGridProps) {
             bottom: `${row.bottomPct}%`,
             opacity: row.opacity,
             transform: `scale(${row.scale})`,
-            filter: `saturate(${row.saturate})`,
+            filter: `saturate(${row.saturate}) blur(${row.blurPx}px)`,
             zIndex: ROWS.length - rowIndex,
           }}
         >
-          {rows[rowIndex].map((light) => (
-            <Person key={light.id} light={light} />
+          {rows[rowIndex].map((light, i) => (
+            <Person key={light.id} light={light} mode={mode} phaseIndex={i} />
           ))}
         </div>
       ))}
 
       {lights.length > 0 && (
         <>
-          <ForegroundNeighbor color={lights[0].color} side="left" />
-          <ForegroundNeighbor color={lights[lights.length - 1].color} side="right" />
+          {/* <ForegroundNeighbor color={lights[0].color} side="left" />
+          <ForegroundNeighbor color={lights[lights.length - 1].color} side="right" /> */}
+          <ForegroundBokeh lights={lights} mode={mode} />
         </>
       )}
     </div>
