@@ -15,9 +15,9 @@ export function GlowPanel({ color }: GlowPanelProps) {
       onPointerUp={() => setActive(false)}
       onPointerLeave={() => setActive(false)}
     >
-      <span className="controller-glow-panel__hint">
+      {/* <span className="controller-glow-panel__hint">
         押している間、光が強くなります(振る動作の代替)
-      </span>
+      </span> */}
     </div>
   );
 }

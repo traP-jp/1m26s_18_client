@@ -1,14 +1,5 @@
+import { PENLIGHT_PALETTE } from "ui";
 import type { PenlightItem, ProgressSegment } from "ui";
-
-export const PENLIGHT_COLORS = [
-  "#00e5ff",
-  "#fff01f",
-  "#ff8c00",
-  "#ff00d9",
-  "#2979ff",
-  "#ff1744",
-  "#ddeae3",
-];
 
 export const mockSong = {
   title: "君とリスタート！",
@@ -34,6 +25,6 @@ export const mockLyricLine = "ひとりぼっちでも君とリスタート！";
 
 export const mockPenlights: PenlightItem[] = Array.from({ length: 96 }, (_, i) => ({
   id: `u${i}`,
-  color: PENLIGHT_COLORS[i % PENLIGHT_COLORS.length],
+  color: PENLIGHT_PALETTE[i % PENLIGHT_PALETTE.length],
   intensity: 0.3 + ((i * 7) % 10) * 0.07,
 }));

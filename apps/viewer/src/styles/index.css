@@ -88,6 +88,11 @@ body,
   outline: none;
   border-color: var(--color-accent);
 }
+.viewer-url-input__error {
+  margin-top: var(--space-3);
+  color: #ff6b6b;
+  font-size: 0.85rem;
+}
 .viewer-url-input__result {
   margin-top: var(--space-6);
   display: flex;
@@ -97,7 +102,10 @@ body,
   border-top: 1px solid var(--color-border);
 }
 
-/* Lobby screen */
+/* Lobby screen — the room code is the one thing people in this screen
+   actually need to act on (join!), so it gets a big centered hero panel;
+   everything else is secondary status and fills the remaining column
+   instead of leaving the lower half of the screen empty. */
 .viewer-lobby {
   min-height: 100vh;
   display: flex;
@@ -108,19 +116,74 @@ body,
 .viewer-lobby__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
 }
-.viewer-lobby__grid {
+.viewer-lobby__body {
+  flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: 1.3fr 1fr;
   gap: var(--space-5);
-  align-items: start;
+  min-height: 0;
+}
+.viewer-lobby__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  text-align: center;
+}
+.viewer-lobby__hero-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.viewer-lobby__hero .ui-room-join {
+  gap: var(--space-6);
+}
+.viewer-lobby__hero .ui-room-join__qr {
+  width: 180px;
+  height: 180px;
+  font-size: 1.4rem;
+  border-radius: var(--radius-lg);
+}
+.viewer-lobby__hero .ui-room-join__label {
+  font-size: 1rem;
+}
+.viewer-lobby__hero .ui-room-join__code {
+  font-size: 3.5rem;
+}
+.viewer-lobby__hero .ui-room-join__url {
+  font-size: 1.05rem;
+}
+.viewer-lobby__stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-height: 0;
+}
+.viewer-lobby__stats .viewer-lobby__panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.viewer-lobby__stats .viewer-panel-title {
+  font-size: 1.1rem;
+}
+.viewer-lobby__panel--count {
+  align-items: center;
+}
+.viewer-lobby__panel--count .ui-participant-counter__count {
+  font-size: 4rem;
+}
+.viewer-lobby__panel--count .ui-participant-counter__label {
+  font-size: 1.05rem;
 }
 .viewer-lobby__footer {
   display: flex;
   justify-content: center;
-  margin-top: auto;
-  padding-top: var(--space-5);
 }
 
 /* Live screen */
@@ -144,7 +207,20 @@ body,
 .viewer-stage-placeholder__bg {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 28%, #2a1440 0%, #0c0a16 55%, #050509 100%);
+  background: radial-gradient(circle at 50% 22%, #33194f 0%, #170f2a 38%, #0a0810 68%, #030305 100%);
+}
+
+.viewer-stage-placeholder__wash {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.viewer-stage-placeholder__wash--a {
+  background: radial-gradient(ellipse 55% 40% at 12% 85%, rgba(255, 140, 40, 0.1), transparent 70%);
+}
+.viewer-stage-placeholder__wash--b {
+  background: radial-gradient(ellipse 55% 40% at 88% 15%, rgba(60, 90, 255, 0.12), transparent 70%);
 }
 .viewer-stage-placeholder__truss {
   position: absolute;
@@ -186,9 +262,6 @@ body,
   animation-name: viewer-spotlight-sway-center;
   animation-duration: 7s;
 }
-/* Each beam is two layers: a wide soft "halo" (blurred) and a narrow bright
-   "core" (sharp) — real stage lights read as a hot center inside a soft glow,
-   a flat single gradient looked cheap by comparison. */
 .viewer-stage-placeholder__spotlight-halo {
   position: absolute;
   inset: 0;
@@ -202,6 +275,32 @@ body,
   mix-blend-mode: screen;
   filter: blur(0.5px);
   clip-path: polygon(49% 0%, 51% 0%, 62% 100%, 38% 100%);
+}
+/* Faint diverging streaks inside the cone — dust catching individual rays of
+   light is what actually reads as "volumetric beam" instead of a flat
+   colored triangle. Slides slowly for a sense of haze drifting through it. */
+.viewer-stage-placeholder__spotlight-rays {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+  clip-path: polygon(44% 0%, 56% 0%, 100% 100%, 0% 100%);
+  background: repeating-linear-gradient(
+    100grad,
+    rgba(255, 255, 255, 0.16) 0px,
+    rgba(255, 255, 255, 0.16) 2px,
+    transparent 2px,
+    transparent 14px
+  );
+  animation: viewer-spotlight-rays-drift 5s linear infinite;
+}
+@keyframes viewer-spotlight-rays-drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 140px;
+  }
 }
 .viewer-stage-placeholder__spotlight--left .viewer-stage-placeholder__spotlight-halo {
   background: linear-gradient(to bottom, rgba(0, 229, 255, 0.32), transparent 82%);
@@ -314,6 +413,22 @@ body,
       transparent 24px
     );
 }
+
+.viewer-stage-placeholder__grain {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+  background-size: 120px 120px;
+  mix-blend-mode: overlay;
+  opacity: 0.05;
+  pointer-events: none;
+}
+.viewer-stage-placeholder__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 45%, transparent 45%, rgba(0, 0, 0, 0.55) 100%);
+  pointer-events: none;
+}
 .viewer-stage-placeholder__label {
   position: absolute;
   right: var(--space-4);
@@ -325,7 +440,6 @@ body,
   opacity: 0.7;
 }
 
-/* Back screen (jumbotron behind Miku, showing a visualizer + lyrics) */
 .viewer-backscreen {
   position: absolute;
   left: 50%;
@@ -401,10 +515,7 @@ body,
   inset: 0;
   background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.6) 100%);
 }
-/* Lyric ticker sits in its own strip along the top edge of the screen — Miku
-   stands in front of the lower/center of the frame, so the visualizer (which
-   spans the full width) can peek out on either side of her while the lyric
-   text stays in a band she never reaches. */
+
 .viewer-backscreen__text {
   position: absolute;
   left: 0;
@@ -426,10 +537,6 @@ body,
   background: linear-gradient(#1c1c26, #0a0a0f);
 }
 
-/* Miku model — bounded by BOTH top and bottom (no fixed height) so her box
-   can never creep above the truss/header on a short viewport: it just shrinks
-   to whatever room is actually left between the two, and the auto-fitting
-   camera in MikuModel3D adapts to that. */
 .viewer-miku {
   position: absolute;
   left: 50%;
@@ -471,6 +578,34 @@ body,
   color: var(--color-text-muted);
   letter-spacing: 0.05em;
 }
+.viewer-miku__play-button {
+  /* .viewer-miku is its own stacking context (z-index: 2), so no z-index set
+     here could ever win against sibling layers with a higher z-index — the
+     header band sits across the top of the stage and the audience band
+     sits across the bottom, so the only place free of both is the vertical
+     middle of this container. */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--color-accent);
+  color: #041014;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: var(--glow-md);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.viewer-miku__play-button:hover {
+  box-shadow: var(--glow-lg);
+}
+.viewer-miku__play-button:active {
+  transform: translate(-50%, -50%) scale(0.96);
+}
 
 /* Header overlay (song info) */
 .viewer-live__header {
@@ -486,8 +621,6 @@ body,
   gap: var(--space-4);
   background: linear-gradient(to bottom, rgba(5, 5, 9, 0.75), transparent);
 }
-/* Demo-only switcher until real beat detection exists — lets you preview both
-   penlight wave patterns without needing audio analysis wired up yet. */
 .viewer-live__wave-demo {
   display: flex;
   gap: var(--space-2);
@@ -524,8 +657,7 @@ body,
     transparent 100%
   );
 }
-/* A lit ground line right where the crowd's feet land — without it there's no
-   visible floor for anyone to actually be standing on. */
+
 .viewer-live__audience::after {
   content: "";
   position: absolute;
