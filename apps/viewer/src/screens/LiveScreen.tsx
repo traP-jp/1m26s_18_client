@@ -5,6 +5,7 @@ import { StagePlaceholder } from "../components/StagePlaceholder";
 import { BackScreen } from "../components/BackScreen";
 import { MikuModel3D } from "../components/MikuModel3D";
 import { stampImages } from "../stamps";
+import type { SongData } from "../api/songs";
 import {
   mockSong,
   mockChorusSections,
@@ -19,17 +20,22 @@ let reactionSeq = 0;
 
 export interface LiveScreenProps {
   onSongEnd: () => void;
+  song?: SongData | null;
+  bpm?: number | null;
 }
 
 const WAVE_MODE_LABELS: Record<PenlightWaveMode, string> = {
   idle: "静止",
   fourFloor: "四つ打ち",
-  buildup: "溜めハイ!",
+  buildup: "溜めハイ",
 };
 
-export function LiveScreen({ onSongEnd }: LiveScreenProps) {
+export function LiveScreen({ onSongEnd, song, bpm }: LiveScreenProps) {
   const [reactions, setReactions] = useState<ReactionItem[]>([]);
   const [waveMode, setWaveMode] = useState<PenlightWaveMode>("idle");
+
+  const title = song?.type === "complete" ? song.title : mockSong.title;
+  const artist = song?.type === "complete" ? song.artist : mockSong.artist;
 
   useEffect(() => {
     if (stampImages.length === 0) return;
@@ -58,14 +64,14 @@ export function LiveScreen({ onSongEnd }: LiveScreenProps) {
       <div className="viewer-live__stage-area">
         <StagePlaceholder />
         <BackScreen line={mockLyricLine} />
-        <MikuModel3D />
+        <MikuModel3D bpm={bpm} />
 
         <header className="viewer-live__header">
           <div className="viewer-song-card viewer-song-card--compact">
             <div className="viewer-song-card__thumb" aria-hidden="true" />
             <div className="viewer-song-card__meta">
-              <span className="viewer-song-card__title">{mockSong.title}</span>
-              <span className="viewer-song-card__artist">{mockSong.artist}</span>
+              <span className="viewer-song-card__title">{title}</span>
+              <span className="viewer-song-card__artist">{artist}</span>
             </div>
           </div>
 
