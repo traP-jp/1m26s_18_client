@@ -30,7 +30,7 @@ function App() {
         />
       );
     case "lobby":
-      return <LobbyScreen onNext={() => setScreen("live")} />;
+      return <LobbyScreen onNext={() => setScreen("live")} song={song} />;
     case "live":
       return <LiveScreen onSongEnd={() => setScreen("url-input")} song={song} bpm={bpm} />;
   }
