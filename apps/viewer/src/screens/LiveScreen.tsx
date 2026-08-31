@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Gauge, ParticipantCounter, PenlightGrid, ProgressBar, ReactionOverlay } from "ui";
 import type { PenlightWaveMode, ReactionItem } from "ui";
 import { StagePlaceholder } from "../components/StagePlaceholder";
@@ -39,7 +39,7 @@ export interface LiveScreenProps {
 const WAVE_MODE_LABELS: Record<PenlightWaveMode, string> = {
   idle: "静止",
   fourFloor: "四つ打ち",
-  buildup: "溜めハイ",
+  buildup: "溜め",
 };
 
 const POSE_STATUS_LABELS: Record<PoseTrackerStatus, string> = {
@@ -52,6 +52,7 @@ const POSE_STATUS_LABELS: Record<PoseTrackerStatus, string> = {
 export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
   const [reactions, setReactions] = useState<ReactionItem[]>([]);
   const [waveMode, setWaveMode] = useState<PenlightWaveMode>("idle");
+  const [songReady, setSongReady] = useState(!songUrl);
   const [poseEnabled, setPoseEnabled] = useState(false);
   const [poseMirror, setPoseMirror] = useState(true);
   const pose = usePoseLandmarker(poseEnabled);
@@ -59,7 +60,7 @@ export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
   vmdRecorderRef.current ??= new VmdMotionRecorder();
   const [vmdRecording, setVmdRecording] = useState(false);
   const songPlayerRef = useRef<SongPlayerHandle>(null);
-
+  const handleSongReady = useCallback(() => setSongReady(true), []);
   const title = song?.type === "complete" ? song.title : mockSong.title;
   const artist = song?.type === "complete" ? song.artist : mockSong.artist;
   const firstBeatMs = song?.beats[0]?.startsAtMs ?? 0;
@@ -121,8 +122,11 @@ export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
           startAtMs={songUrl ? firstBeatMs : undefined}
           getPositionMs={songUrl ? () => songPlayerRef.current?.getPositionMs() ?? 0 : undefined}
           segments={songUrl ? song?.segments : undefined}
+          readyToPlay={songReady}
         />
-        {songUrl && <SongPlayer ref={songPlayerRef} songUrl={songUrl} />}
+        {songUrl && (
+          <SongPlayer ref={songPlayerRef} songUrl={songUrl} onReady={handleSongReady} />
+        )}
 
         <header className="viewer-live__header">
           <div className="viewer-song-card viewer-song-card--compact">

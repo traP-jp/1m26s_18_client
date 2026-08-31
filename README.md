@@ -34,8 +34,23 @@ npm run dev:controller # controller のみ
 npm run preview -- viewer url-input
 npm run preview -- viewer lobby
 npm run preview -- viewer live
+npm run preview -- viewer motion-test
 npm run preview -- controller calibration
 npm run preview -- controller controller
 ```
 
-(devサーバーが起動済みであることが前提です。手動でURLを開く場合は `http://localhost:5173/?screen=live` のように直接指定しても同じです。) 
+(devサーバーが起動済みであることが前提です。手動でURLを開く場合は `http://localhost:5173/?screen=live` のように直接指定しても同じです。)
+
+### モーション単体テスト(`motion-test`)
+
+曲データを使わず、MMDモーション1本とBPMの組み合わせだけを試せる開発用画面です。
+
+```
+npm run preview -- viewer motion-test
+```
+
+または `http://localhost:5173/?screen=motion-test` を直接開く。プルダウンから
+[`apps/viewer/src/motions.ts`](./apps/viewer/src/motions.ts) に登録済みのモーションを選び、
+「このモーションの想定BPM(referenceBpm)」と「テストする曲のBPM」を調整しながら実際の
+再生速度を確認できます。モーションの追加方法・本番のverse/chorusローテーションの仕組みは
+[motions.md](../motions.md) を参照。
