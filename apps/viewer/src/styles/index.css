@@ -607,6 +607,17 @@ body,
   transform: translate(-50%, -50%) scale(0.96);
 }
 
+.viewer-song-player {
+  /* 音声だけ使いたい。display:none/visibility:hiddenだとYouTube IFrame APIが
+     まともに動かないことがあるため、実寸を持たせたまま画面外に逃がす。 */
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  overflow: hidden;
+  left: -9999px;
+  top: -9999px;
+}
+
 /* Header overlay (song info) */
 .viewer-live__header {
   position: absolute;

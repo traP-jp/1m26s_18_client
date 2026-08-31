@@ -3,43 +3,43 @@
 以下優先度順
 
 ### 1. ライブ画面で曲の音声を鳴らす
-`apps/viewer/src/api/songs.ts` の `fetchSongData()` はバックエンド経由でTextAliveの**メタデータ(JSON)のみ**取得しており、音声そのものは持っていない。実際に音を鳴らすには `textalive-app-api` をフロントエンドに直接組み込み、`Player.createFromSongUrl()` をブラウザ内で実行する必要がある。方針は合意済み(検証用トークンでまず実装 → 後でenv変数化して本番トークンに差し替え)だが未着手。
-- 関連: `apps/viewer/src/components/MikuModel3D.tsx`(現状は推定BPMによる速度スケールのみで、実再生とは同期していない)
-- 関連: `apps/viewer/src/screens/LiveScreen.tsx`
+
+バックエンド経由でTextAliveのメタデータのみ取得中
+
+`textalive-app-api` をフロントエンドに直接組み込む。
+(検証用トークンで実装 → 後でenv変数化して本番トークンに差し替え)
 
 ### 2. WebSocketによるリアルタイム同期が未実装
-viewer(PC)とcontroller(スマホ)は完全に独立して動作しており、controllerでの操作(ペンライト色・振る動作・スタンプなど)がviewerに一切反映されない。`req.md` 6章で定義された通信仕様(`join_session` / `state_update` / `sync_playback` 等)はまだ影も形もない。バックエンド側のWebSocketサーバー実装状況に依存。
+
+バックエンド側のWebSocketサーバー実装状況に依存。
 
 ### 3. 歌詞表示が実データに未接続
-バックエンドは `phrases[]`(歌詞テキスト+タイミング)を既に返しているが、フロントで一切使っていない。`apps/viewer/src/screens/LiveScreen.tsx` は今も `mockLyricLine` という固定文字列を `BackScreen` に渡しているだけ。取得済みの `song.phrases` と実再生時刻(#1が前提)を突き合わせて表示に切り替える必要がある。
 
----
-
-## 中優先度
-
+ `phrases[]`(歌詞テキスト+タイミング)をスクリーン上に反映。
+ 
 ### 4. 実センサー(DeviceMotionEvent)未実装
-controllerの「振る」動作は `onPointerDown`(タップ/押下)で代替中。iOS 13+ で必要な `DeviceMotionEvent.requestPermission()` の許可ダイアログフローも含めて未着手。
-- 関連: `apps/controller/src/components/ShakeTestArea.tsx`(現状は擬似加速度スパイクのランダム生成)
+controllerの振る動作。
+iOS 13+ で必要な `DeviceMotionEvent.requestPermission()` の許可ダイアログフローも含めて未着手。
 
 ### 5. Vibration API未実装
-シンクロ成功時の振動フィードバック(`req.md` 4.1)が未実装。
+シンクロ成功時の振動フィードバックが未実装。
 
 ### 6. ビート/曲区間に応じた演出の自動切り替えが未実装
-`PenlightGrid` の振り付けモード(`idle`/`fourFloor`/`buildup`)は手動デモボタンでの切り替えのみ。実際の曲のビート・サビ区間に応じて自動で切り替わるようにする必要がある(#1のPlayer実装後、`onTimeUpdate`等から駆動するのが自然)。
-- 関連: `apps/viewer/src/screens/LiveScreen.tsx` の `WAVE_MODE_LABELS` 手動ボタン部分
+`PenlightGrid` の振り付けモードは現在、手動デモボタンでの切り替えのみ。実際の曲のビート・サビ区間に応じて自動で切り替わるようにする必要がある(1のPlayer実装後、`onTimeUpdate`等から駆動する)。
 
 ### 7. three.js/PixiJSでのステージ本実装
-`StagePlaceholder` は照明トラス・スポットライト等をCSS/SVGで再現したプレースホルダー。3Dエンジンでの本実装は未着手(MMDモデル自体は three.js 導入済みなので、ステージ全体を同じシーンに統合するのが選択肢の一つ)。
+`StagePlaceholder` は照明トラス・スポットライト等をCSS/SVGで再現したプレースホルダー。3Dエンジンでの本実装は未着手(MMDモデル自体は three.js 導入済みなので、ステージ全体を同じシーンに統合するのが選択肢の一つ)
 
 ### 8. セッション管理・ルームコードの実発行
-Lobby画面のルームコード・参加URLは `mockRoomCode` / `mockJoinUrl` の固定ダミー値。セッション発行・参加者管理はバックエンド側の範囲だが、フロント側もWebSocket接続確立後の実データ切り替えが必要。
-- 関連: `apps/viewer/src/mockData.ts`
+Lobby画面のルームコード・参加URLは現状、固定ダミー値。
+接続確立後の実データ切り替えが必要。
 
 ### 9. リアクション(スタンプ・風船)のcontroller→viewer連携
-controllerのスタンプ/風船ボタンはローカルのフィードバック表示のみ。viewer側の `ReactionOverlay` は独立したデモタイマーでランダム生成しているだけで、両者は繋がっていない(#2のWebSocket実装が前提)。
+
+controllerのスタンプ/風船ボタンはローカルのフィードバック表示のみ。viewer側は独立したデモタイマーでランダム生成しているだけ。両者は繋がっていない(#2のWebSocket実装が前提)
 
 ### 10. 参加者数・ゲージ類の実データ化
-視聴人数・準備完了度・熱量シンクロ度は全て固定のモック値。WebSocketの`state_update`等から算出する必要がある(#2が前提)。
+視聴人数・準備完了度・熱量シンクロ度は全て固定のモック値。WebSocketの`state_update`等から算出する必要がある(2が前提)
 
 ---
 
