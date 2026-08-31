@@ -5,13 +5,14 @@ const TEXTALIVE_TOKEN = import.meta.env.VITE_TEXTALIVE_TOKEN as string | undefin
 
 export interface SongPlayerHandle {
   play: () => void;
+  getPositionMs: () => number;
 }
 
 export interface SongPlayerProps {
   songUrl: string;
 }
 
-// 音声再生専用。動画はステージ演出と被るので画面外に逃がし、音だけ使う。
+// 音声再生専用
 export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function SongPlayer(
   { songUrl },
   ref,
@@ -22,6 +23,13 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
   useImperativeHandle(ref, () => ({
     play: () => {
       playerRef.current?.requestPlay();
+    },
+    getPositionMs: () => {
+      try {
+        return playerRef.current?.timer.position ?? 0;
+      } catch {
+        return 0;
+      }
     },
   }));
 

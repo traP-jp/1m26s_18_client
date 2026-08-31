@@ -40,6 +40,7 @@ export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
 
   const title = song?.type === "complete" ? song.title : mockSong.title;
   const artist = song?.type === "complete" ? song.artist : mockSong.artist;
+  const firstBeatMs = song?.beats[0]?.startsAtMs ?? 0;
 
   useEffect(() => {
     if (stampImages.length === 0) return;
@@ -68,7 +69,13 @@ export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
       <div className="viewer-live__stage-area">
         <StagePlaceholder />
         <BackScreen line={mockLyricLine} />
-        <MikuModel3D bpm={bpm} onPlay={() => songPlayerRef.current?.play()} />
+        <MikuModel3D
+          bpm={bpm}
+          onPlay={() => songPlayerRef.current?.play()}
+          startAtMs={songUrl ? firstBeatMs : undefined}
+          getPositionMs={songUrl ? () => songPlayerRef.current?.getPositionMs() ?? 0 : undefined}
+          segments={songUrl ? song?.segments : undefined}
+        />
         {songUrl && <SongPlayer ref={songPlayerRef} songUrl={songUrl} />}
 
         <header className="viewer-live__header">
