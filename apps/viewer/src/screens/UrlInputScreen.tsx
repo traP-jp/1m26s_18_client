@@ -47,7 +47,7 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
           <input
             className="viewer-url-input__field"
             type="url"
-            placeholder="https://songle.jp/songs/..."
+            placeholder="https://www.youtube.com/watch?v=... / https://www.nicovideo.jp/watch/sm..."
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />

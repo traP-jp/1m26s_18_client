@@ -1,4 +1,6 @@
 import { Button, Gauge, ParticipantCounter, Panel, ProgressBar, RoomJoinCard } from "ui";
+import type { ProgressSegment } from "ui";
+import type { SongData } from "../api/songs";
 import {
   mockSong,
   mockChorusSections,
@@ -10,17 +12,31 @@ import {
 
 export interface LobbyScreenProps {
   onNext: () => void;
+  song?: SongData | null;
 }
 
-export function LobbyScreen({ onNext }: LobbyScreenProps) {
+export function LobbyScreen({ onNext, song }: LobbyScreenProps) {
+  const title = song?.type === "complete" ? song.title : mockSong.title;
+  const artist = song?.type === "complete" ? song.artist : mockSong.artist;
+  const chorusSections: ProgressSegment[] =
+    song && song.durationMs > 0
+      ? song.segments
+          .filter((seg) => seg.isChorus)
+          .map((seg) => ({
+            startPct: (seg.startsAtMs / song.durationMs) * 100,
+            endPct: (seg.endsAtMs / song.durationMs) * 100,
+            type: "chorus" as const,
+          }))
+      : mockChorusSections;
+
   return (
     <div className="viewer-lobby">
       <header className="viewer-lobby__header">
         <div className="viewer-song-card">
           <div className="viewer-song-card__thumb" aria-hidden="true" />
           <div className="viewer-song-card__meta">
-            <span className="viewer-song-card__title">{mockSong.title}</span>
-            <span className="viewer-song-card__artist">{mockSong.artist}</span>
+            <span className="viewer-song-card__title">{title}</span>
+            <span className="viewer-song-card__artist">{artist}</span>
           </div>
         </div>
       </header>
@@ -43,7 +59,7 @@ export function LobbyScreen({ onNext }: LobbyScreenProps) {
 
           <Panel className="viewer-lobby__panel">
             <h2 className="viewer-panel-title">曲の進行プレビュー</h2>
-            <ProgressBar segments={mockChorusSections} progressPct={0} />
+            <ProgressBar segments={chorusSections} progressPct={0} />
             <p className="viewer-hint">オレンジ区間がサビです</p>
           </Panel>
         </div>
