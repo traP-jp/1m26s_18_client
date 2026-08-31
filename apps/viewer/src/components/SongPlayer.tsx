@@ -10,19 +10,32 @@ export interface SongPlayerHandle {
 
 export interface SongPlayerProps {
   songUrl: string;
+  // Timerの初期化が終わり、requestPlay()を呼んでも安全になった時点で呼ばれる。
+  // ニコニコ動画等は埋め込みプレイヤーの初期化に時間がかかり、これを待たずに
+  // requestPlay()するとPlayer内部でクラッシュするため、再生ボタンの活性化を
+  // これで待ち合わせる。
+  onReady?: () => void;
 }
 
 // 音声再生専用
 export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function SongPlayer(
-  { songUrl },
+  { songUrl, onReady },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Player | null>(null);
+  const onReadyRef = useRef(onReady);
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
 
   useImperativeHandle(ref, () => ({
     play: () => {
-      playerRef.current?.requestPlay();
+      try {
+        playerRef.current?.requestPlay();
+      } catch (err) {
+        console.error("Failed to start song playback", err);
+      }
     },
     getPositionMs: () => {
       try {
@@ -47,6 +60,7 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
       mediaBannerPosition: null,
     });
     playerRef.current = player;
+    player.addListener({ onTimerReady: () => onReadyRef.current?.() });
 
     player.createFromSongUrl(songUrl).catch((err: unknown) => {
       console.error("Failed to load song for playback", err);
