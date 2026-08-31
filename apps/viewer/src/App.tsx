@@ -2,11 +2,12 @@ import { useState } from "react";
 import { UrlInputScreen } from "./screens/UrlInputScreen";
 import { LobbyScreen } from "./screens/LobbyScreen";
 import { LiveScreen } from "./screens/LiveScreen";
+import { MotionTestScreen } from "./screens/MotionTestScreen";
 import type { SongData } from "./api/songs";
 
-type Screen = "url-input" | "lobby" | "live";
+type Screen = "url-input" | "lobby" | "live" | "motion-test";
 
-const SCREENS: Screen[] = ["url-input", "lobby", "live"];
+const SCREENS: Screen[] = ["url-input", "lobby", "live", "motion-test"];
 
 function getInitialScreen(): Screen {
   const requested = new URLSearchParams(window.location.search).get("screen");
@@ -42,6 +43,8 @@ function App() {
           songUrl={songUrl}
         />
       );
+    case "motion-test":
+      return <MotionTestScreen />;
   }
 }
 export default App;

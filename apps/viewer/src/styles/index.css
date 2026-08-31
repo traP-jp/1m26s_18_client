@@ -93,6 +93,38 @@ body,
   color: #ff6b6b;
   font-size: 0.85rem;
 }
+
+/* Motion test screen (dev-only, ?screen=motion-test) */
+.viewer-motion-test {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  padding: var(--space-6);
+  flex-wrap: wrap;
+}
+.viewer-motion-test__card {
+  width: min(420px, 100%);
+}
+.viewer-motion-test__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-4);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+.viewer-motion-test__stage {
+  position: relative;
+  width: 440px;
+  height: 640px;
+  max-width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: radial-gradient(circle at 50% 30%, #1a1a26, #05050a 70%);
+  overflow: hidden;
+}
 .viewer-url-input__result {
   margin-top: var(--space-6);
   display: flex;
