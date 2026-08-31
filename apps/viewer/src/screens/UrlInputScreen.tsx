@@ -5,7 +5,7 @@ import { fetchSongData, estimateBpm } from "../api/songs";
 import type { SongData } from "../api/songs";
 
 export interface UrlInputScreenProps {
-  onNext: (song: SongData, bpm: number | null) => void;
+  onNext: (song: SongData, bpm: number | null, songUrl: string) => void;
 }
 
 type Status = "idle" | "loading" | "error";
@@ -68,7 +68,7 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
               </div>
             </div>
 
-            <Button onClick={() => onNext(song, estimateBpm(song.beats))}>
+            <Button onClick={() => onNext(song, estimateBpm(song.beats), url)}>
               ロビーへ進む
             </Button>
           </div>

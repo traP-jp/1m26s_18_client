@@ -37,9 +37,10 @@ function getAnimationDurationSec(animation: MmdAnimation): number {
 
 export interface MikuModel3DProps {
   bpm?: number | null;
+  onPlay?: () => void;
 }
 
-export function MikuModel3D({ bpm }: MikuModel3DProps) {
+export function MikuModel3D({ bpm, onPlay }: MikuModel3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [motionReady, setMotionReady] = useState(false);
@@ -60,6 +61,7 @@ export function MikuModel3D({ bpm }: MikuModel3DProps) {
     playStartTimeRef.current = performance.now();
     isPlayingRef.current = true;
     setIsPlaying(true);
+    onPlay?.();
   };
 
   useEffect(() => {

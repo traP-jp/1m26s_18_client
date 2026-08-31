@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Gauge, ParticipantCounter, PenlightGrid, ProgressBar, ReactionOverlay } from "ui";
 import type { PenlightWaveMode, ReactionItem } from "ui";
 import { StagePlaceholder } from "../components/StagePlaceholder";
 import { BackScreen } from "../components/BackScreen";
 import { MikuModel3D } from "../components/MikuModel3D";
+import { SongPlayer } from "../components/SongPlayer";
+import type { SongPlayerHandle } from "../components/SongPlayer";
 import { stampImages } from "../stamps";
 import type { SongData } from "../api/songs";
 import {
@@ -22,6 +24,7 @@ export interface LiveScreenProps {
   onSongEnd: () => void;
   song?: SongData | null;
   bpm?: number | null;
+  songUrl?: string;
 }
 
 const WAVE_MODE_LABELS: Record<PenlightWaveMode, string> = {
@@ -30,9 +33,10 @@ const WAVE_MODE_LABELS: Record<PenlightWaveMode, string> = {
   buildup: "溜めハイ",
 };
 
-export function LiveScreen({ onSongEnd, song, bpm }: LiveScreenProps) {
+export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
   const [reactions, setReactions] = useState<ReactionItem[]>([]);
   const [waveMode, setWaveMode] = useState<PenlightWaveMode>("idle");
+  const songPlayerRef = useRef<SongPlayerHandle>(null);
 
   const title = song?.type === "complete" ? song.title : mockSong.title;
   const artist = song?.type === "complete" ? song.artist : mockSong.artist;
@@ -64,7 +68,8 @@ export function LiveScreen({ onSongEnd, song, bpm }: LiveScreenProps) {
       <div className="viewer-live__stage-area">
         <StagePlaceholder />
         <BackScreen line={mockLyricLine} />
-        <MikuModel3D bpm={bpm} />
+        <MikuModel3D bpm={bpm} onPlay={() => songPlayerRef.current?.play()} />
+        {songUrl && <SongPlayer ref={songPlayerRef} songUrl={songUrl} />}
 
         <header className="viewer-live__header">
           <div className="viewer-song-card viewer-song-card--compact">

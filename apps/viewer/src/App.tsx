@@ -17,14 +17,16 @@ function App() {
   const [screen, setScreen] = useState<Screen>(getInitialScreen);
   const [song, setSong] = useState<SongData | null>(null);
   const [bpm, setBpm] = useState<number | null>(null);
+  const [songUrl, setSongUrl] = useState("");
 
   switch (screen) {
     case "url-input":
       return (
         <UrlInputScreen
-          onNext={(fetchedSong, fetchedBpm) => {
+          onNext={(fetchedSong, fetchedBpm, fetchedSongUrl) => {
             setSong(fetchedSong);
             setBpm(fetchedBpm);
+            setSongUrl(fetchedSongUrl);
             setScreen("lobby");
           }}
         />
@@ -32,7 +34,14 @@ function App() {
     case "lobby":
       return <LobbyScreen onNext={() => setScreen("live")} song={song} />;
     case "live":
-      return <LiveScreen onSongEnd={() => setScreen("url-input")} song={song} bpm={bpm} />;
+      return (
+        <LiveScreen
+          onSongEnd={() => setScreen("url-input")}
+          song={song}
+          bpm={bpm}
+          songUrl={songUrl}
+        />
+      );
   }
 }
 export default App;
