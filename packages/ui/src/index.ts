@@ -1,5 +1,6 @@
 import "./components.css";
 
+export * from "./palette";
 export * from "./components/Button";
 export * from "./components/Panel";
 export * from "./components/ProgressBar";

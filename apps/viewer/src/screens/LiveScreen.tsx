@@ -7,7 +7,10 @@ import { MikuModel3D } from "../components/MikuModel3D";
 import { usePoseLandmarker } from "../pose/usePoseLandmarker";
 import { VmdMotionRecorder } from "../pose/VmdMotionRecorder";
 import type { PoseTrackerStatus } from "../pose/usePoseLandmarker";
+import { SongPlayer } from "../components/SongPlayer";
+import type { SongPlayerHandle } from "../components/SongPlayer";
 import { stampImages } from "../stamps";
+import type { SongData } from "../api/songs";
 import {
   mockSong,
   mockChorusSections,
@@ -28,12 +31,15 @@ function vmdFileName(): string {
 
 export interface LiveScreenProps {
   onSongEnd: () => void;
+  song?: SongData | null;
+  bpm?: number | null;
+  songUrl?: string;
 }
 
 const WAVE_MODE_LABELS: Record<PenlightWaveMode, string> = {
   idle: "静止",
   fourFloor: "四つ打ち",
-  buildup: "溜めハイ!",
+  buildup: "溜めハイ",
 };
 
 const POSE_STATUS_LABELS: Record<PoseTrackerStatus, string> = {
@@ -43,7 +49,7 @@ const POSE_STATUS_LABELS: Record<PoseTrackerStatus, string> = {
   error: "エラー",
 };
 
-export function LiveScreen({ onSongEnd }: LiveScreenProps) {
+export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
   const [reactions, setReactions] = useState<ReactionItem[]>([]);
   const [waveMode, setWaveMode] = useState<PenlightWaveMode>("idle");
   const [poseEnabled, setPoseEnabled] = useState(false);
@@ -52,6 +58,11 @@ export function LiveScreen({ onSongEnd }: LiveScreenProps) {
   const vmdRecorderRef = useRef<VmdMotionRecorder | null>(null);
   vmdRecorderRef.current ??= new VmdMotionRecorder();
   const [vmdRecording, setVmdRecording] = useState(false);
+  const songPlayerRef = useRef<SongPlayerHandle>(null);
+
+  const title = song?.type === "complete" ? song.title : mockSong.title;
+  const artist = song?.type === "complete" ? song.artist : mockSong.artist;
+  const firstBeatMs = song?.beats[0]?.startsAtMs ?? 0;
 
   const startVmdRecording = () => {
     vmdRecorderRef.current?.start();
@@ -101,14 +112,24 @@ export function LiveScreen({ onSongEnd }: LiveScreenProps) {
       <div className="viewer-live__stage-area">
         <StagePlaceholder />
         <BackScreen line={mockLyricLine} />
-        <MikuModel3D poseFrameRef={pose.frameRef} mirror={poseMirror} vmdRecorder={vmdRecorderRef.current} />
+        <MikuModel3D
+          poseFrameRef={pose.frameRef}
+          mirror={poseMirror}
+          vmdRecorder={vmdRecorderRef.current}
+          bpm={bpm}
+          onPlay={() => songPlayerRef.current?.play()}
+          startAtMs={songUrl ? firstBeatMs : undefined}
+          getPositionMs={songUrl ? () => songPlayerRef.current?.getPositionMs() ?? 0 : undefined}
+          segments={songUrl ? song?.segments : undefined}
+        />
+        {songUrl && <SongPlayer ref={songPlayerRef} songUrl={songUrl} />}
 
         <header className="viewer-live__header">
           <div className="viewer-song-card viewer-song-card--compact">
             <div className="viewer-song-card__thumb" aria-hidden="true" />
             <div className="viewer-song-card__meta">
-              <span className="viewer-song-card__title">{mockSong.title}</span>
-              <span className="viewer-song-card__artist">{mockSong.artist}</span>
+              <span className="viewer-song-card__title">{title}</span>
+              <span className="viewer-song-card__artist">{artist}</span>
             </div>
           </div>
 

@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Button, ColorPicker, IconToggleButton, ParticipantCounter, Panel } from "ui";
+import { Button, ColorPicker, IconToggleButton, ParticipantCounter, Panel, PENLIGHT_PALETTE } from "ui";
 import { ShakeTestArea } from "../components/ShakeTestArea";
 import {
-  PENLIGHT_COLORS,
   mockInitialPermissions,
   mockParticipantCount,
   type PermissionStatus,
@@ -56,7 +55,7 @@ export function CalibrationScreen({ color, onColorChange, onReady }: Calibration
 
       <Panel className="controller-calibration__panel">
         <h2 className="controller-panel-title">ペンライトの色</h2>
-        <ColorPicker colors={PENLIGHT_COLORS} selected={color} onSelect={onColorChange} />
+        <ColorPicker colors={PENLIGHT_PALETTE} selected={color} onSelect={onColorChange} />
       </Panel>
 
       <Panel className="controller-calibration__panel">

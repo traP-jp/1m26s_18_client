@@ -289,28 +289,6 @@
   }
 }
 
-/* Foreground "neighbors": huge, dark, cropped by the screen edge — like the
-   back of someone's head/shoulder intruding into a phone video shot from
-   inside the crowd. This is what actually sells "you are standing here too",
-   since the depth rows alone read as a distant toy crowd. */
-.ui-penlight-grid__neighbor {
-  position: absolute;
-  bottom: -10px;
-  width: 140px;
-  height: 300px;
-  z-index: 4;
-  pointer-events: none;
-  filter: brightness(0.32) saturate(0.7);
-  opacity: 0.92;
-}
-.ui-penlight-grid__neighbor--left {
-  left: -30px;
-}
-.ui-penlight-grid__neighbor--right {
-  right: -30px;
-  transform: scaleX(-1);
-}
-
 /* Bokeh: huge out-of-focus glowing bars along the very bottom edge, like
    penlights held by people standing right against the "camera" — the
    shallow-depth-of-field foreground you see in real concert photos/video. */
@@ -337,6 +315,7 @@
 /* ColorPicker */
 .ui-color-picker {
   display: flex;
+  justify-content: center;
   gap: var(--space-3);
   flex-wrap: wrap;
 }

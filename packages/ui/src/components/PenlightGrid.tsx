@@ -152,14 +152,6 @@ function Person({
   );
 }
 
-function ForegroundNeighbor({ color, side }: { color: string; side: "left" | "right" }) {
-  return (
-    <span className={`ui-penlight-grid__neighbor ui-penlight-grid__neighbor--${side}`}>
-      <PersonMarkup color={color} />
-    </span>
-  );
-}
-
 function ForegroundBokeh({ lights, mode }: { lights: PenlightItem[]; mode: PenlightWaveMode }) {
   const bars = lights.slice(0, 9);
   const barClass = [
@@ -215,13 +207,7 @@ export function PenlightGrid({ lights, mode = "idle" }: PenlightGridProps) {
         </div>
       ))}
 
-      {lights.length > 0 && (
-        <>
-          {/* <ForegroundNeighbor color={lights[0].color} side="left" />
-          <ForegroundNeighbor color={lights[lights.length - 1].color} side="right" /> */}
-          <ForegroundBokeh lights={lights} mode={mode} />
-        </>
-      )}
+      {lights.length > 0 && <ForegroundBokeh lights={lights} mode={mode} />}
     </div>
   );
 }
