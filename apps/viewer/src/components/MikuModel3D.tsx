@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { ThreeMmdLoader, disposeMmdModel } from "@yohawing/three-mmd-loader";
 import type { ThreeMmdModel, MmdAnimation } from "@yohawing/three-mmd-loader";
+import type { RefObject } from "react";
+import { MmdPoseDriver } from "../pose/MmdPoseDriver";
+import type { PoseFrame } from "../pose/landmarks";
+import type { VmdMotionRecorder } from "../pose/VmdMotionRecorder";
 import type { Segment } from "../api/songs";
 import { getMotionById } from "../motions";
 import type { MotionDefinition } from "../motions";
@@ -58,6 +62,15 @@ function getAnimationDurationSec(animation: MmdAnimation): number {
 }
 
 export interface MikuModel3DProps {
+  /**
+   * 姿勢推定の最新フレーム。値が入っている間はランドマークでボーンを駆動し、
+   * null の間はダンス再生(未再生時は静止ポーズ+ゆっくりした揺れ)に戻る。
+   */
+  poseFrameRef?: RefObject<PoseFrame | null>;
+  /** 鏡写しにするか(デフォルト true) */
+  mirror?: boolean;
+  /** 渡すと、姿勢駆動中の毎フレームをこのレコーダーへ記録する(録画中のみ) */
+  vmdRecorder?: VmdMotionRecorder;
   bpm?: number | null;
   onPlay?: () => void;
   // 曲の実再生位置[ms]を返す関数
@@ -68,6 +81,9 @@ export interface MikuModel3DProps {
 }
 
 export function MikuModel3D({
+  poseFrameRef,
+  mirror = true,
+  vmdRecorder,
   bpm,
   onPlay,
   getPositionMs,
@@ -83,6 +99,13 @@ export function MikuModel3D({
   // The render loop below lives inside a mount-once effect and reads these
   // every frame — refs (not state) so a button click (or a prop change)
   // can steer it without tearing down and rebuilding the whole WebGL scene.
+  const poseFrameRefRef = useRef(poseFrameRef);
+  poseFrameRefRef.current = poseFrameRef;
+  const mirrorRef = useRef(mirror);
+  mirrorRef.current = mirror;
+  const vmdRecorderRef = useRef(vmdRecorder);
+  vmdRecorderRef.current = vmdRecorder;
+
   const isPlayingRef = useRef(false);
   const playStartTimeRef = useRef(0);
   const bpmRef = useRef(bpm);
@@ -120,6 +143,8 @@ export function MikuModel3D({
 
     let disposed = false;
     let model: ThreeMmdModel | null = null;
+    let poseDriver: MmdPoseDriver | null = null;
+    let wasPoseDriven = false;
     const motions: Record<MotionKey, { animation: MmdAnimation; durationSec: number } | null> = {
       verse: null,
       chorus: null,
@@ -192,6 +217,13 @@ export function MikuModel3D({
         camera.lookAt(0, size.y * 0.5, 0);
 
         model.update(0);
+        // Bones are driven directly (bypassing the loader runtime) while pose
+        // tracking is active. Must be created after update(0) so reset() restores
+        // the runtime's initial pose.
+        poseDriver = new MmdPoseDriver(model.mesh, { mirror: mirrorRef.current });
+        if (poseDriver.missingBones.length > 0) {
+          console.warn("MmdPoseDriver: bones not found in model", poseDriver.missingBones);
+        }
         setStatus("ready");
 
         // Until "再生" is pressed, she just sways gently in place. Pressing
@@ -245,17 +277,38 @@ export function MikuModel3D({
           return elapsedSec % motion.durationSec;
         };
 
+        // Capping the loop well below display refresh rate keeps sustained GPU
+        // load low, which is what avoids the context-loss crash on weaker/software
+        // GPUs. Pose tracking is applied at the same capped rate (the webcam is
+        // ~30fps anyway). While a pose frame is available the landmarks drive the
+        // bones directly (model.update() must not run then — the runtime would
+        // overwrite them with the VMD evaluation); otherwise dance playback (or
+        // the idle sway) takes over.
         const targetFrameIntervalMs = 1000 / 24;
         let lastFrameTime = 0;
         renderer.setAnimationLoop((timeMs: number) => {
           if (timeMs - lastFrameTime < targetFrameIntervalMs) return;
           lastFrameTime = timeMs;
           if (model) {
-            const danceElapsedSec = isPlayingRef.current ? computeDanceElapsedSec(timeMs) : null;
-            if (danceElapsedSec !== null) {
-              model.update(danceElapsedSec);
+            const frame = poseFrameRefRef.current?.current ?? null;
+            if (frame && poseDriver) {
+              poseDriver.setMirror(mirrorRef.current);
+              poseDriver.apply(frame);
+              vmdRecorderRef.current?.capture(poseDriver, timeMs);
+              // face the audience while mimicking; ease the sway out
+              model.root.rotation.y *= 0.8;
+              wasPoseDriven = true;
             } else {
-              model.root.rotation.y = Math.sin(timeMs * 0.00015) * 0.35;
+              if (wasPoseDriven && poseDriver) {
+                poseDriver.reset();
+                wasPoseDriven = false;
+              }
+              const danceElapsedSec = isPlayingRef.current ? computeDanceElapsedSec(timeMs) : null;
+              if (danceElapsedSec !== null) {
+                model.update(danceElapsedSec);
+              } else {
+                model.root.rotation.y = Math.sin(timeMs * 0.00015) * 0.35;
+              }
             }
           }
           renderer.render(scene, camera);
