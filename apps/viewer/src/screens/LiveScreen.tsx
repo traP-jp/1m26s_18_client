@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Gauge, ParticipantCounter, PenlightGrid, ProgressBar, ReactionOverlay } from "ui";
 import type { PenlightWaveMode, ReactionItem } from "ui";
 import { StagePlaceholder } from "../components/StagePlaceholder";
 import { BackScreen } from "../components/BackScreen";
 import { MikuModel3D } from "../components/MikuModel3D";
+import { usePoseLandmarker } from "../pose/usePoseLandmarker";
+import { VmdMotionRecorder } from "../pose/VmdMotionRecorder";
+import type { PoseTrackerStatus } from "../pose/usePoseLandmarker";
 import { stampImages } from "../stamps";
 import {
   mockSong,
@@ -17,6 +20,12 @@ import {
 
 let reactionSeq = 0;
 
+function vmdFileName(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `motion_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.vmd`;
+}
+
 export interface LiveScreenProps {
   onSongEnd: () => void;
 }
@@ -27,9 +36,43 @@ const WAVE_MODE_LABELS: Record<PenlightWaveMode, string> = {
   buildup: "溜めハイ!",
 };
 
+const POSE_STATUS_LABELS: Record<PoseTrackerStatus, string> = {
+  idle: "",
+  starting: "カメラ・モデル準備中…",
+  running: "トラッキング中",
+  error: "エラー",
+};
+
 export function LiveScreen({ onSongEnd }: LiveScreenProps) {
   const [reactions, setReactions] = useState<ReactionItem[]>([]);
   const [waveMode, setWaveMode] = useState<PenlightWaveMode>("idle");
+  const [poseEnabled, setPoseEnabled] = useState(false);
+  const [poseMirror, setPoseMirror] = useState(true);
+  const pose = usePoseLandmarker(poseEnabled);
+  const vmdRecorderRef = useRef<VmdMotionRecorder | null>(null);
+  vmdRecorderRef.current ??= new VmdMotionRecorder();
+  const [vmdRecording, setVmdRecording] = useState(false);
+
+  const startVmdRecording = () => {
+    vmdRecorderRef.current?.start();
+    setVmdRecording(true);
+  };
+
+  /** 録画を止め、1フレーム以上あれば .vmd をダウンロードさせる */
+  const stopVmdRecordingAndSave = () => {
+    setVmdRecording(false);
+    const recorder = vmdRecorderRef.current;
+    if (!recorder) return;
+    recorder.stop();
+    if (recorder.frameCount === 0) return;
+    const blob = new Blob([recorder.toVmd()], { type: "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = vmdFileName();
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     if (stampImages.length === 0) return;
@@ -58,7 +101,7 @@ export function LiveScreen({ onSongEnd }: LiveScreenProps) {
       <div className="viewer-live__stage-area">
         <StagePlaceholder />
         <BackScreen line={mockLyricLine} />
-        <MikuModel3D />
+        <MikuModel3D poseFrameRef={pose.frameRef} mirror={poseMirror} vmdRecorder={vmdRecorderRef.current} />
 
         <header className="viewer-live__header">
           <div className="viewer-song-card viewer-song-card--compact">
@@ -79,6 +122,28 @@ export function LiveScreen({ onSongEnd }: LiveScreenProps) {
                 {WAVE_MODE_LABELS[mode]}
               </Button>
             ))}
+            <Button
+              variant={poseEnabled ? "primary" : "ghost"}
+              onClick={() => {
+                if (poseEnabled && vmdRecording) stopVmdRecordingAndSave();
+                setPoseEnabled((v) => !v);
+              }}
+            >
+              {poseEnabled ? "モーション ON" : "モーション OFF"}
+            </Button>
+            {poseEnabled && (
+              <Button variant={poseMirror ? "primary" : "ghost"} onClick={() => setPoseMirror((v) => !v)}>
+                鏡
+              </Button>
+            )}
+            {poseEnabled && (
+              <Button
+                variant={vmdRecording ? "primary" : "ghost"}
+                onClick={vmdRecording ? stopVmdRecordingAndSave : startVmdRecording}
+              >
+                {vmdRecording ? "■ VMD保存" : "● VMD録画"}
+              </Button>
+            )}
           </div>
         </header>
 
@@ -86,6 +151,15 @@ export function LiveScreen({ onSongEnd }: LiveScreenProps) {
           <PenlightGrid lights={mockPenlights} mode={waveMode} />
         </div>
         <ReactionOverlay items={reactions} onItemDone={removeReaction} />
+
+        {poseEnabled && (
+          <div className={`viewer-pose-preview${poseMirror ? " viewer-pose-preview--mirror" : ""}`}>
+            <video ref={pose.videoRef} muted playsInline />
+            <span className="viewer-pose-preview__status">
+              {pose.status === "error" ? `エラー: ${pose.error ?? ""}` : POSE_STATUS_LABELS[pose.status]}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="viewer-live__hud">
