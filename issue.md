@@ -17,9 +17,14 @@
 
  `phrases[]`(歌詞テキスト+タイミング)をスクリーン上に反映。
  
-### 4. 実センサー(DeviceMotionEvent)未実装
-controllerの振る動作。
-iOS 13+ で必要な `DeviceMotionEvent.requestPermission()` の許可ダイアログフローも含めて未着手。
+### 4. ~~実センサー(DeviceMotionEvent)未実装~~ → 実装済み
+`apps/controller/src/motion/` に実装。
+- `shakeDetector.ts`: 加速度→振り強度(0–100)と 1 ショット検出(ピーク検出・クールダウン付き)。`acceleration` が null の端末は重力込み値から重力を推定して補う
+- `motionSensor.ts`: iOS 13+ の `requestPermission()` を含む許可フロー・リスナー管理のシングルトン。ステータス: `unsupported / insecure / prompt / requesting / granted / denied / unavailable`
+- `useMotion.ts`: React フック(`useMotionStatus` / `useMotionIntensity` / `useShake` / `requestMotionPermission`)
+
+CalibrationScreen の許可ボタン・ShakeTestArea・GlowPanel・ControllerScreen の COMBO が実センサー駆動になった。センサーが無い環境(PC 等)ではタップ代替にフォールバックする。
+残: しきい値(`SHAKE_THRESHOLD_PCT=55`, `MAX_MAGNITUDE=20 m/s²`)の実機での体感調整、WebSocket 実装後の `useShake` からの送信(#2)。
 
 ### 5. Vibration API未実装
 シンクロ成功時の振動フィードバックが未実装。

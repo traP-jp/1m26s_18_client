@@ -114,6 +114,7 @@ export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
         <BackScreen line={mockLyricLine} />
         <MikuModel3D
           poseFrameRef={pose.frameRef}
+          poseImageFrameRef={pose.imageFrameRef}
           mirror={poseMirror}
           vmdRecorder={vmdRecorderRef.current}
           bpm={bpm}
