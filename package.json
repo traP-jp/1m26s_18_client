@@ -16,6 +16,7 @@
     "preview": "node scripts/preview.mjs"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "playwright": "^1.55.0"
   }
 }

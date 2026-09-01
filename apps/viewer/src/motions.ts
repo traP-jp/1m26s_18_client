@@ -3,13 +3,11 @@ export interface MotionDefinition {
   label: string;
   url: string;
   
-  // モーションが振り付けられた元曲の想定テンポ（体感に基づく暫定値）
+  // モーションが振り付けられた元曲の想定テンポ
   referenceBpm: number;
 }
 
 // 全モーションの一元管理場所
-// 実ファイルは public/mmd/motions/ 
-// ライセンス一覧は同フォルダのREADME.md参照
 export const MOTIONS: MotionDefinition[] = [
   {
     id: "helltaker-verse",
@@ -27,6 +25,12 @@ export const MOTIONS: MotionDefinition[] = [
     id: "pose-capture-test",
     label: "pose capture",
     url: "/mmd/motions/pose-capture.vmd",
+    referenceBpm: 120,
+  },
+  {
+    id: "ingrid",
+    label: "Ingrid",
+    url: "/mmd/motions/ingrid.vmd",
     referenceBpm: 120,
   },
 ];

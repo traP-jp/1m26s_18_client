@@ -16,24 +16,25 @@ const MODEL_URL = "/mmd/piloula-miku-expo10th.pmx";
 type MotionKey = "verse" | "chorus";
 export type MotionSource = Pick<MotionDefinition, "url" | "referenceBpm">;
 
-// どのモーションIDをverse/chorusに割り当てるかだけを決める
-// サビ区間(isChorus)に入ったらchorus側に切り替え
-const MOTION_IDS: Record<MotionKey, string> = {
-  verse: "helltaker-verse",
-  chorus: "helltaker-chorus",
+// プールにモーションを増やすときはmotions.tsに登録した上でここにid追加
+const MOTION_POOL_IDS: Record<MotionKey, string[]> = {
+  verse: ["helltaker-verse","pose-capture-test"],
+  chorus: ["ingrid"],
 };
 
-function resolveMotionSource(key: MotionKey): MotionSource {
-  const motion = getMotionById(MOTION_IDS[key]);
-  if (!motion) {
-    throw new Error(`Unknown motion id for "${key}": ${MOTION_IDS[key]}`);
-  }
-  return motion;
+function resolveMotionPool(key: MotionKey): MotionDefinition[] {
+  const pool = MOTION_POOL_IDS[key].map((id) => {
+    const motion = getMotionById(id);
+    if (!motion) throw new Error(`Unknown motion id for "${key}": ${id}`);
+    return motion;
+  });
+  if (pool.length === 0) throw new Error(`Motion pool for "${key}" is empty`);
+  return pool;
 }
 
-const MOTION_SOURCES: Record<MotionKey, MotionSource> = {
-  verse: resolveMotionSource("verse"),
-  chorus: resolveMotionSource("chorus"),
+const MOTION_POOLS: Record<MotionKey, MotionDefinition[]> = {
+  verse: resolveMotionPool("verse"),
+  chorus: resolveMotionPool("chorus"),
 };
 const MMD_FPS = 30;
 
@@ -47,8 +48,6 @@ function computePlaybackRate(bpm: number | null | undefined, referenceBpm: numbe
 
 type Status = "loading" | "ready" | "error";
 
-// VMD tracks don't carry an explicit "duration" — it's the last keyframe
-// across every bone/morph track, in MMD's fixed 30fps frame numbering.
 function getAnimationDurationSec(animation: MmdAnimation): number {
   let maxFrame = 0;
   for (const track of Object.values(animation.boneTracks)) {
@@ -84,6 +83,9 @@ export interface MikuModel3DProps {
   startAtMs?: number;
   segments?: Segment[];
   motionOverride?: MotionSource;
+  // 曲側(SongPlayer)がrequestPlay()を呼んでも安全な状態になっているか。
+  // 未指定ならtrue扱い(曲データなしのプレビュー用フォールバック)。
+  readyToPlay?: boolean;
 }
 
 export function MikuModel3D({
@@ -97,6 +99,7 @@ export function MikuModel3D({
   startAtMs,
   segments,
   motionOverride,
+  readyToPlay = true,
 }: MikuModel3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<Status>("loading");
@@ -114,7 +117,6 @@ export function MikuModel3D({
   mirrorRef.current = mirror;
   const vmdRecorderRef = useRef(vmdRecorder);
   vmdRecorderRef.current = vmdRecorder;
-
   const isPlayingRef = useRef(false);
   const playStartTimeRef = useRef(0);
   const bpmRef = useRef(bpm);
@@ -152,20 +154,17 @@ export function MikuModel3D({
 
     let disposed = false;
     let model: ThreeMmdModel | null = null;
+    // モーションIDごとに読み込み済みのアニメーションをキャッシュ
+    // プール間で同じIDが重複しても1回しか読み込まない
+    const loadedMotions = new Map<string, { animation: MmdAnimation; durationSec: number }>();
     let poseDriver: MmdPoseDriver | null = null;
     let wasPoseDriven = false;
-    const motions: Record<MotionKey, { animation: MmdAnimation; durationSec: number } | null> = {
-      verse: null,
-      chorus: null,
-    };
     let activeMotionKey: MotionKey = "verse";
+    let activeMotionId: string | null = null;
     let activeSegmentStartMs = 0;
-
+    const occurrenceCount: Record<MotionKey, number> = { verse: 0, chorus: 0 };
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(30, 1, 1, 100);
-    // antialias off + capped pixel ratio: this canvas is small (a few hundred px),
-    // and MSAA + high DPR was pushing sustained per-frame GPU cost high enough to
-    // trigger context loss ("watchdog kills a too-slow context") on weaker/software GPUs.
     const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "low-power" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     container.appendChild(renderer.domElement);
@@ -238,23 +237,13 @@ export function MikuModel3D({
           console.warn("MmdPoseDriver: bones not found in model", poseDriver.missingBones);
         }
         setStatus("ready");
-
-        // Until "再生" is pressed, she just sways gently in place. Pressing
-        // the button arms playback; the dance itself only starts once the
-        // song's real position reaches its first beat (returns null until then).
-        // While playing, each frame also checks which song segment we're in
-        // and swaps to the chorus/verse motion accordingly.
         const computeDanceElapsedSec = (timeMs: number): number | null => {
           const getPosition = getPositionMsRef.current;
           if (!getPosition) {
-            // No real playback clock (preview without a fetched song, or
-            // single-motion test mode) — fall back to the local-clock,
-            // verse-slot-only behavior. In test mode, motions.verse holds
-            // the override motion and its own referenceBpm applies.
-            const motion = motions.verse;
+            const source = motionOverrideRef.current ?? MOTION_POOLS.verse[0];
+            const motion = loadedMotions.get(source.url);
             if (!motion) return null;
-            const referenceBpm = motionOverrideRef.current?.referenceBpm ?? MOTION_SOURCES.verse.referenceBpm;
-            const rate = computePlaybackRate(bpmRef.current, referenceBpm);
+            const rate = computePlaybackRate(bpmRef.current, source.referenceBpm);
             const elapsedSec = ((timeMs - playStartTimeRef.current) / 1000) * rate;
             return elapsedSec % motion.durationSec;
           }
@@ -272,20 +261,25 @@ export function MikuModel3D({
             segmentStartMs = currentSegment.startsAtMs;
           }
 
-          if (desiredKey !== activeMotionKey) {
-            const nextMotion = motions[desiredKey];
+          // 新しい区間に入るたび、そのプールの次のモーションをローテーションで選ぶ
+          if (!activeMotionId || segmentStartMs !== activeSegmentStartMs || desiredKey !== activeMotionKey) {
+            const pool = MOTION_POOLS[desiredKey];
+            const picked = pool[occurrenceCount[desiredKey] % pool.length];
+            const nextMotion = loadedMotions.get(picked.url);
             if (model && nextMotion) {
               model.setAnimation(nextMotion.animation);
               activeMotionKey = desiredKey;
+              activeMotionId = picked.url;
               activeSegmentStartMs = segmentStartMs;
+              occurrenceCount[desiredKey] += 1;
             }
-          } else if (segmentStartMs !== activeSegmentStartMs) {
-            activeSegmentStartMs = segmentStartMs;
           }
 
-          const motion = motions[activeMotionKey];
-          if (!motion) return null;
-          const rate = computePlaybackRate(bpmRef.current, MOTION_SOURCES[activeMotionKey].referenceBpm);
+          if (!activeMotionId) return null;
+          const activeSource = MOTION_POOLS[activeMotionKey].find((m) => m.url === activeMotionId);
+          const motion = loadedMotions.get(activeMotionId);
+          if (!motion || !activeSource) return null;
+          const rate = computePlaybackRate(bpmRef.current, activeSource.referenceBpm);
           const elapsedSec = ((positionMs - activeSegmentStartMs) / 1000) * rate;
           return elapsedSec % motion.durationSec;
         };
@@ -349,32 +343,41 @@ export function MikuModel3D({
           }
           renderer.render(scene, camera);
         });
+        const primarySource = motionOverrideRef.current ?? MOTION_POOLS.verse[0];
 
         loader
-          .loadAnimation(motionOverrideRef.current?.url ?? MOTION_SOURCES.verse.url)
+          .loadAnimation(primarySource.url)
           .then(({ animation }) => {
             if (disposed || !model) return;
-            motions.verse = { animation, durationSec: getAnimationDurationSec(animation) };
+            loadedMotions.set(primarySource.url, {
+              animation,
+              durationSec: getAnimationDurationSec(animation),
+            });
             model.setAnimation(animation);
             setMotionReady(true);
           })
           .catch((err: unknown) => {
-            // Not fatal — the model just stays in its static pose, and no
-            // play button appears since there's nothing to play.
-            console.error("Failed to load MMD motion (verse)", err);
+            console.error(`Failed to load MMD motion: ${primarySource.url}`, err);
           });
 
         if (!motionOverrideRef.current) {
-          loader
-            .loadAnimation(MOTION_SOURCES.chorus.url)
-            .then(({ animation }) => {
-              if (disposed) return;
-              motions.chorus = { animation, durationSec: getAnimationDurationSec(animation) };
-            })
-            .catch((err: unknown) => {
-              // Not fatal — chorus sections just keep using the verse motion.
-              console.error("Failed to load MMD motion (chorus)", err);
-            });
+          const remainingUrls = new Set<string>();
+          for (const pool of Object.values(MOTION_POOLS)) {
+            for (const motion of pool) remainingUrls.add(motion.url);
+          }
+          remainingUrls.delete(primarySource.url);
+
+          for (const url of remainingUrls) {
+            loader
+              .loadAnimation(url)
+              .then(({ animation }) => {
+                if (disposed) return;
+                loadedMotions.set(url, { animation, durationSec: getAnimationDurationSec(animation) });
+              })
+              .catch((err: unknown) => {
+                console.error(`Failed to load MMD motion: ${url}`, err);
+              });
+          }
         }
       })
       .catch((err: unknown) => {
@@ -408,9 +411,9 @@ export function MikuModel3D({
           表示に失敗しました(ページの再読み込みをお試しください)
         </span>
       )}
-      {status === "ready" && motionReady && !isPlaying && (
+      {status === "ready" && motionReady && readyToPlay && !isPlaying && (
         <button type="button" className="viewer-miku__play-button" onClick={handlePlay}>
-          ▶ ダンス再生
+          ▶ ライブ開始
         </button>
       )}
     </div>
