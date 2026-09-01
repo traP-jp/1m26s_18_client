@@ -54,3 +54,14 @@ npm run preview -- viewer motion-test
 「このモーションの想定BPM(referenceBpm)」と「テストする曲のBPM」を調整しながら実際の
 再生速度を確認できます。モーションの追加方法・本番のverse/chorusローテーションの仕組みは
 [motions.md](../motions.md) を参照。
+
+## スマホ実機での動作確認(モーションセンサー)
+
+`DeviceMotionEvent` は iOS では HTTPS でないと無効(許可ダイアログも出ない)ため、実機では自己署名 HTTPS で起動します。
+
+```
+VITE_HTTPS=1 npm run dev:controller
+```
+
+起動ログに出る `https://<PCのLAN IP>:5174` をスマホで開き、初回は証明書の警告を「詳細 → このまま続ける」で許可してください。
+キャリブレーション画面の「モーションセンサー → 許可する」でブラウザの許可ダイアログが出ます(iOS で一度「許可しない」を選ぶと、Safari を終了して開き直すか 設定 > Safari > 「モーションと画面の向きのアクセス」を切り替えるまで再プロンプトされません)。
