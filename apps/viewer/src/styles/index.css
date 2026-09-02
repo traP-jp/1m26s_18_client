@@ -555,12 +555,68 @@ body,
   top: 70px;
   padding: var(--space-3) var(--space-4);
   background: linear-gradient(to bottom, rgba(3, 4, 8, 0.8) 60%, transparent);
+  /* フォント・配色は https://github.com/TextAliveJp/textalive-app-lyric-sheet を踏襲 */
+  font-family: "Shippori Mincho B1", serif;
   font-size: 2.3rem;
-  font-weight: 700;
-  color: #eafcff;
+  font-weight: 500;
+  color: #e2f8fc;
   text-align: center;
   letter-spacing: 0.02em;
-  text-shadow: 0 0 14px rgba(0, 229, 255, 0.85), 0 0 30px rgba(0, 229, 255, 0.4);
+  text-shadow: 2px 2px 3px #e4215a;
+  animation: viewer-backscreen-line-in 0.5s ease-out;
+}
+@keyframes viewer-backscreen-line-in {
+  from {
+    transform: translate3d(0, 40%, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+/* ビート同期のアンダーライン。SongPlayerからのビート検出のたびにJS側で
+   クラスをactive→active+beatと2段階で付け替えてアニメーションを再生する
+   (参考アプリと同じダブルrAFでのクラス切り替え手法)。 */
+.viewer-backscreen__beatbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(70px + 4.2rem);
+  height: 3px;
+  margin: 0 var(--space-4);
+  background: rgb(255 222 193);
+  opacity: 0;
+}
+.viewer-backscreen__beatbar--active {
+  animation: viewer-beatbar-activate 0.3s;
+}
+.viewer-backscreen__beatbar--beat {
+  animation: viewer-beatbar-beat 0.5s;
+}
+@keyframes viewer-beatbar-activate {
+  from {
+    opacity: 0;
+  }
+  to {
+    width: 100%;
+    opacity: 1;
+  }
+}
+@keyframes viewer-beatbar-beat {
+  0% {
+    width: 0;
+    opacity: 1;
+  }
+  50% {
+    width: 100%;
+    opacity: 1;
+  }
+  100% {
+    width: 100%;
+    opacity: 0;
+  }
 }
 .viewer-backscreen__stand {
   width: 8px;

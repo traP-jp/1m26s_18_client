@@ -21,7 +21,7 @@ export const mockHeatLevel = 71; // %
 export const mockRoomCode = "ABC123";
 export const mockJoinUrl = "https://live.example.com/join/ABC123";
 
-export const mockLyricLine = "ひとりぼっちでも君とリスタート！";
+export const mockLyricLine = "";
 
 export const mockPenlights: PenlightItem[] = Array.from({ length: 96 }, (_, i) => ({
   id: `u${i}`,
