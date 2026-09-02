@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CalibrationScreen } from "./screens/CalibrationScreen";
 import { ControllerScreen } from "./screens/ControllerScreen";
+import { useWakeLock } from "./wakeLock/useWakeLock";
 
 type Screen = "calibration" | "controller";
 
@@ -14,6 +15,8 @@ function getInitialScreen(): Screen {
 function App() {
   const [screen, setScreen] = useState<Screen>(getInitialScreen);
   const [penlightColor, setPenlightColor] = useState("#00e5ff");
+  // スマホを振っている間は画面に触れないので、キャリブレーション〜コントローラーの間ずっと自動ロックを抑止する
+  useWakeLock();
 
   switch (screen) {
     case "calibration":
