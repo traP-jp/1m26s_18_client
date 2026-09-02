@@ -257,3 +257,49 @@ body,
   font-size: 0.75rem;
   padding: var(--space-1) var(--space-3);
 }
+
+/* Beat judgement (controller screen) */
+.controller-judgement {
+  position: absolute;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-hud);
+  font-size: 1.1rem;
+  letter-spacing: 0.12em;
+  pointer-events: none;
+  animation: controller-judgement-pop 0.5s ease-out forwards;
+}
+.controller-judgement--perfect {
+  color: var(--color-warning);
+  text-shadow: 0 0 12px var(--color-warning);
+}
+.controller-judgement--good {
+  color: var(--color-success);
+  text-shadow: 0 0 10px var(--color-success);
+}
+.controller-judgement--miss {
+  color: var(--color-text-muted);
+}
+@keyframes controller-judgement-pop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1.1);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(1);
+  }
+}
+.controller-combo--hot {
+  color: var(--color-accent-strong);
+  text-shadow: 0 0 10px var(--color-accent);
+}

@@ -17,7 +17,10 @@ export interface ShakeEvent {
   intensity: number;
   /** ピーク時の加速度 (m/s^2) */
   peakMagnitude: number;
+  /** ショット確定時刻 (performance.now() 基準)。ピーク検出のため onset より 30–80ms 遅れる */
   timestamp: number;
+  /** しきい値を超えた瞬間 = 振り始めの時刻。ビート同期の判定にはこちらを使う */
+  onsetTimestamp: number;
 }
 
 /** この加速度 (m/s^2) を 100% とみなす。ペンライトを強めに振ると 20–30 m/s^2 程度になる */
@@ -145,6 +148,7 @@ export class ShakeDetector {
       intensity: magnitudeToIntensity(this.peak),
       peakMagnitude: this.peak,
       timestamp: now,
+      onsetTimestamp: this.aboveSince,
     };
   }
 }

@@ -5,6 +5,10 @@ import type { ShakeEvent } from "./shakeDetector";
 export { SHAKE_THRESHOLD_PCT } from "./shakeDetector";
 export type { MotionSnapshot, MotionStatus } from "./motionSensor";
 export type { MotionSample, ShakeEvent } from "./shakeDetector";
+export * from "./beatSync";
+export * from "./haptics";
+export * from "./soundFeedback";
+export { useBeatClock } from "./useBeatClock";
 
 /**
  * センサーの許可状態。アプリ内どこから呼んでも同じシングルトンを参照する。
