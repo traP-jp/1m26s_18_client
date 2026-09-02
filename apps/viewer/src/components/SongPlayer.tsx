@@ -10,17 +10,8 @@ export interface SongPlayerHandle {
 
 export interface SongPlayerProps {
   songUrl: string;
-  // Timerの初期化が終わり、requestPlay()を呼んでも安全になった時点で呼ばれる。
-  // ニコニコ動画等は埋め込みプレイヤーの初期化に時間がかかり、これを待たずに
-  // requestPlay()するとPlayer内部でクラッシュするため、再生ボタンの活性化を
-  // これで待ち合わせる。
   onReady?: () => void;
-  // 新しいフレーズが発声され始めたら、そのフレーズ全文で呼ばれる。
-  // https://github.com/TextAliveJp/textalive-app-lyric-sheet と同じ
-  // Player.addListener(onTimeUpdate)ベースの手法だが、findPhraseChangeで
-  // フレーズ単位にしている(サンプルは文字単位)。
   onLyricLineUpdate?: (line: string) => void;
-  // ビートが1つ進むたびに呼ばれる(ビート同期のアンダーラインを光らせる用)。
   onBeat?: () => void;
 }
 
@@ -76,8 +67,8 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
     });
     playerRef.current = player;
 
-    // フレーズが新しく発声され始めたらそのフレーズ全文を、ビートが1つ進んだら
-    // onBeatを、それぞれ呼ぶ。
+    // フレーズが新しく発声され始めたらそのフレーズ全文
+    // ビートが1つ進んだらonBeat
     let lastPhraseTime = -1;
     let lastBeatTime = -1;
     player.addListener({
