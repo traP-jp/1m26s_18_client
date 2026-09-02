@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, ColorPicker, IconToggleButton, ParticipantCounter, Panel, PENLIGHT_PALETTE } from "ui";
 import { ShakeTestArea } from "../components/ShakeTestArea";
-import { requestMotionPermission, useMotionStatus, type MotionStatus } from "../motion/useMotion";
+import { armAudioUnlock, requestMotionPermission, useMotionStatus, type MotionStatus } from "../motion/useMotion";
 import {
   mockInitialPermissions,
   mockParticipantCount,
@@ -44,6 +44,9 @@ export function CalibrationScreen({ color, onColorChange, onReady }: Calibration
   const [permissions, setPermissions] = useState(mockInitialPermissions);
   const [ready, setReady] = useState(false);
   const motion = useMotionStatus();
+
+  // iOS の音フィードバック用: この画面のタップ(許可・準備完了など)で AudioContext を解錠しておく
+  useEffect(armAudioUnlock, []);
 
   const requestMicPermission = () => {
     setPermissions((prev) => ({ ...prev, mic: "granted" }));
