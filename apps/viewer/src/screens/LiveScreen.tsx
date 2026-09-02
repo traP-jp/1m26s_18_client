@@ -61,6 +61,10 @@ export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
   const [vmdRecording, setVmdRecording] = useState(false);
   const songPlayerRef = useRef<SongPlayerHandle>(null);
   const handleSongReady = useCallback(() => setSongReady(true), []);
+  const [lyricLine, setLyricLine] = useState(mockLyricLine);
+  const handleLyricLineUpdate = useCallback((line: string) => setLyricLine(line), []);
+  const [beatPulse, setBeatPulse] = useState(0);
+  const handleBeat = useCallback(() => setBeatPulse((n) => n + 1), []);
   const title = song?.type === "complete" ? song.title : mockSong.title;
   const artist = song?.type === "complete" ? song.artist : mockSong.artist;
   const firstBeatMs = song?.beats[0]?.startsAtMs ?? 0;
@@ -112,7 +116,7 @@ export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
     <div className="viewer-live">
       <div className="viewer-live__stage-area">
         <StagePlaceholder />
-        <BackScreen line={mockLyricLine} />
+        <BackScreen line={lyricLine} beatPulse={beatPulse} />
         <MikuModel3D
           poseFrameRef={pose.frameRef}
           mirror={poseMirror}
@@ -125,7 +129,13 @@ export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
           readyToPlay={songReady}
         />
         {songUrl && (
-          <SongPlayer ref={songPlayerRef} songUrl={songUrl} onReady={handleSongReady} />
+          <SongPlayer
+            ref={songPlayerRef}
+            songUrl={songUrl}
+            onReady={handleSongReady}
+            onLyricLineUpdate={handleLyricLineUpdate}
+            onBeat={handleBeat}
+          />
         )}
 
         <header className="viewer-live__header">
