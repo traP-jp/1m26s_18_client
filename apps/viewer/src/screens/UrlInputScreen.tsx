@@ -2,17 +2,20 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Button, Panel } from "ui";
 import { fetchSongData, estimateBpm } from "../api/songs";
+import { createRoomForSong } from "../api/rooms";
+import type { RoomInfo } from "../api/rooms";
 import type { SongData } from "../api/songs";
 
 export interface UrlInputScreenProps {
-  onNext: (song: SongData, bpm: number | null, songUrl: string) => void;
+  onNext: (song: SongData, bpm: number | null, songUrl: string, room: RoomInfo) => void;
 }
 
-type Status = "idle" | "loading" | "error";
+type Status = "idle" | "loading";
 
 export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState<Status>("idle");
+  const [creating, setCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [song, setSong] = useState<SongData | null>(null);
 
@@ -26,8 +29,22 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
       setStatus("idle");
     } catch (err) {
       setSong(null);
-      setStatus("error");
+      setStatus("idle");
       setErrorMessage(err instanceof Error ? err.message : "取得に失敗しました");
+    }
+  };
+
+  const handleEnterLobby = async () => {
+    if (!song || creating) return;
+    setCreating(true);
+    setErrorMessage("");
+    try {
+      const room = await createRoomForSong(url);
+      onNext(song, estimateBpm(song.beats), url, room);
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "部屋の作成に失敗しました");
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -56,7 +73,7 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
           </Button>
         </form>
 
-        {status === "error" && <p className="viewer-url-input__error">{errorMessage}</p>}
+        {errorMessage && <p className="viewer-url-input__error">{errorMessage}</p>}
 
         {song && (
           <div className="viewer-url-input__result">
@@ -68,8 +85,8 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
               </div>
             </div>
 
-            <Button onClick={() => onNext(song, estimateBpm(song.beats), url)}>
-              ロビーへ進む
+            <Button onClick={handleEnterLobby} disabled={creating}>
+              {creating ? "部屋を作成中…" : "ロビーへ進む"}
             </Button>
           </div>
         )}

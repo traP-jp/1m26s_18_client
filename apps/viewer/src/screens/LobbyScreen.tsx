@@ -1,6 +1,8 @@
 import { Button, Gauge, ParticipantCounter, Panel, ProgressBar, RoomJoinCard } from "ui";
 import type { ProgressSegment } from "ui";
 import type { SongData } from "../api/songs";
+import type { RoomInfo } from "../api/rooms";
+import type { HostRoomState } from "../api/useHostRoom";
 import {
   mockSong,
   mockChorusSections,
@@ -13,9 +15,13 @@ import {
 export interface LobbyScreenProps {
   onNext: () => void;
   song?: SongData | null;
+  room?: RoomInfo | null;
+  hostRoom?: HostRoomState;
 }
 
-export function LobbyScreen({ onNext, song }: LobbyScreenProps) {
+export function LobbyScreen({ onNext, song, room, hostRoom }: LobbyScreenProps) {
+  const status = hostRoom?.status ?? "idle";
+  const roomCode = room?.roomId ?? mockRoomCode;
   const title = song?.type === "complete" ? song.title : mockSong.title;
   const artist = song?.type === "complete" ? song.artist : mockSong.artist;
   const chorusSections: ProgressSegment[] =
@@ -44,7 +50,7 @@ export function LobbyScreen({ onNext, song }: LobbyScreenProps) {
       <div className="viewer-lobby__body">
         <Panel className="viewer-lobby__hero" glow>
           <span className="viewer-lobby__hero-label">参加はこちらから</span>
-          <RoomJoinCard roomCode={mockRoomCode} joinUrl={mockJoinUrl} />
+          <RoomJoinCard roomCode={roomCode} joinUrl={mockJoinUrl} />
         </Panel>
 
         <div className="viewer-lobby__stats">
@@ -66,7 +72,9 @@ export function LobbyScreen({ onNext, song }: LobbyScreenProps) {
       </div>
 
       <div className="viewer-lobby__footer">
-        <Button onClick={onNext}>ライブ開始</Button>
+        <Button onClick={onNext} disabled={room != null && status !== "connected"}>
+          ライブ開始
+        </Button>
       </div>
     </div>
   );
