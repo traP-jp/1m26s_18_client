@@ -3,7 +3,7 @@ import { execFile } from "node:child_process";
 
 const APPS = {
   viewer: { port: 5173, screens: ["url-input", "lobby", "live", "motion-test"] },
-  controller: { port: 5174, screens: ["calibration", "controller"] },
+  controller: { port: 5174, screens: ["join", "calibration", "controller"] },
 };
 
 function printUsage() {
