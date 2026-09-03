@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { closeHostConnection, getHostConnection } from "./hostRoomConnection";
+import type { RoomConnection } from "protocol";
 import type { RoomInfo } from "./rooms";
 
 export type HostRoomStatus = "idle" | "connecting" | "connected" | "error";
@@ -7,10 +8,11 @@ export type HostRoomStatus = "idle" | "connecting" | "connected" | "error";
 export interface HostRoomState {
   status: HostRoomStatus;
   errorMessage: string | null;
+  connection: RoomConnection | null;
 }
 
-const IDLE: HostRoomState = { status: "idle", errorMessage: null };
-const CONNECTING: HostRoomState = { status: "connecting", errorMessage: null };
+const IDLE: HostRoomState = { status: "idle", errorMessage: null, connection: null };
+const CONNECTING: HostRoomState = { status: "connecting", errorMessage: null, connection: null };
 
 export function useHostRoom(room: RoomInfo | null): HostRoomState {
   const [state, setState] = useState<HostRoomState>(room ? CONNECTING : IDLE);
@@ -24,9 +26,9 @@ export function useHostRoom(room: RoomInfo | null): HostRoomState {
     let cancelled = false;
     setState(CONNECTING);
     void getHostConnection(room)
-      .then(() => {
+      .then((connection) => {
         if (!cancelled) {
-          setState({ status: "connected", errorMessage: null });
+          setState({ status: "connected", errorMessage: null, connection });
         }
       })
       .catch((error) => {
@@ -35,6 +37,7 @@ export function useHostRoom(room: RoomInfo | null): HostRoomState {
             status: "error",
             errorMessage:
               error instanceof Error ? error.message : "サーバーへの接続に失敗しました",
+            connection: null,
           });
         }
       });

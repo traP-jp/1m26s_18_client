@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Redirect, Route, Switch, useLocation, useParams } from "wouter";
 import { Button, Panel } from "ui";
+import { ServerTimeProvider } from "protocol";
 import { CalibrationScreen } from "./screens/CalibrationScreen";
 import { ControllerScreen } from "./screens/ControllerScreen";
 import { JoinScreen } from "./screens/JoinScreen";
@@ -69,19 +70,21 @@ function RoomLayout() {
   }
 
   return (
-    <Switch>
-      <Route path="/controller">
-        <ControllerScreen color={penlightColor} onColorChange={setPenlightColor} />
-      </Route>
-      {/* /room/:code ルート・/calibration・未知のサブパスはすべてキャリブレーション(部屋の既定画面) */}
-      <Route>
-        <CalibrationScreen
-          color={penlightColor}
-          onColorChange={setPenlightColor}
-          onReady={() => navigate("/controller")}
-        />
-      </Route>
-    </Switch>
+    <ServerTimeProvider connection={room.connection}>
+      <Switch>
+        <Route path="/controller">
+          <ControllerScreen color={penlightColor} onColorChange={setPenlightColor} />
+        </Route>
+        {/* /room/:code ルート・/calibration・未知のサブパスはすべてキャリブレーション(部屋の既定画面) */}
+        <Route>
+          <CalibrationScreen
+            color={penlightColor}
+            onColorChange={setPenlightColor}
+            onReady={() => navigate("/controller")}
+          />
+        </Route>
+      </Switch>
+    </ServerTimeProvider>
   );
 }
 

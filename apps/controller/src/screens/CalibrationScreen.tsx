@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, ColorPicker, IconToggleButton, ParticipantCounter, Panel, PENLIGHT_PALETTE } from "ui";
+import { useServerTime } from "protocol";
 import { ShakeTestArea } from "../components/ShakeTestArea";
 import { armAudioUnlock, requestMotionPermission, useMotionStatus, type MotionStatus } from "../motion/useMotion";
 import { refreshWakeLock, requestWakeLockPermission, useWakeLock, type WakeLockSnapshot } from "../wakeLock/useWakeLock";
@@ -13,6 +14,12 @@ export interface CalibrationScreenProps {
   color: string;
   onColorChange: (color: string) => void;
   onReady: () => void;
+}
+
+/** unix µs を「日時.ミリ秒」表示にする(デバッグ用) */
+function formatServerTimeUs(serverTimeUs: number): string {
+  const ms = Math.floor(serverTimeUs / 1000);
+  return `${new Date(ms).toLocaleString("ja-JP", { hour12: false })}.${String(ms % 1000).padStart(3, "0")}`;
 }
 
 const STATUS_LABEL: Record<PermissionStatus, string> = {
@@ -99,6 +106,17 @@ export function CalibrationScreen({ color, onColorChange, onReady }: Calibration
   const motion = useMotionStatus();
   const wakeSnapshot = useWakeLock();
   const wake = { ...describeWakeLock(wakeSnapshot), permission: wakeSnapshot.permission };
+  const serverTime = useServerTime();
+  const serverNowUs = serverTime.nowUs();
+  // デバッグ表示用: 補正後の時刻が進んでいることを確認できるよう、開発時のみ定期的に再レンダーする
+  const [, setDebugTick] = useState(0);
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+    const timer = window.setInterval(() => setDebugTick((tick) => tick + 1), 50);
+    return () => window.clearInterval(timer);
+  }, []);
 
   // iOS の音フィードバック用: この画面のタップ(許可・準備完了など)で AudioContext を解錠しておく
   useEffect(armAudioUnlock, []);
@@ -134,13 +152,11 @@ export function CalibrationScreen({ color, onColorChange, onReady }: Calibration
         <div className="controller-permission-row">
           <span>モーションセンサー</span>
           <span
-            className={`controller-permission-row__status ${
-              motion.status === "granted" ? "controller-permission-row__status--ok" : ""
-            } ${
-              motion.status === "denied" || motion.status === "insecure"
+            className={`controller-permission-row__status ${motion.status === "granted" ? "controller-permission-row__status--ok" : ""
+              } ${motion.status === "denied" || motion.status === "insecure"
                 ? "controller-permission-row__status--error"
                 : ""
-            }`.trim()}
+              }`.trim()}
           >
             {MOTION_STATUS_LABEL[motion.status]}
           </span>
@@ -161,9 +177,8 @@ export function CalibrationScreen({ color, onColorChange, onReady }: Calibration
         <div className="controller-permission-row">
           <span>画面ロック抑止</span>
           <span
-            className={`controller-permission-row__status ${
-              wake.ok ? "controller-permission-row__status--ok" : ""
-            } ${wake.error ? "controller-permission-row__status--error" : ""}`.trim()}
+            className={`controller-permission-row__status ${wake.ok ? "controller-permission-row__status--ok" : ""
+              } ${wake.error ? "controller-permission-row__status--error" : ""}`.trim()}
           >
             {wake.label}
           </span>
@@ -203,6 +218,25 @@ export function CalibrationScreen({ color, onColorChange, onReady }: Calibration
           ライブへ進む
         </Button>
       </div>
+
+      {import.meta.env.DEV && (
+        <Panel className="controller-calibration__panel">
+          <h2 className="controller-panel-title">時刻同期(デバッグ)</h2>
+          <div className="controller-permission-row">
+            <span>
+              状態: {serverTime.synced ? "同期済み" : "同期中…"}
+              {serverTime.offsetUs !== null && ` / オフセット: ${(serverTime.offsetUs / 1000).toFixed(1)}ms`}
+              {serverTime.rttMs !== null && ` / RTT: ${serverTime.rttMs.toFixed(1)}ms`}
+            </span>
+            <Button variant="secondary" onClick={() => serverTime.resync()}>
+              再同期
+            </Button>
+          </div>
+          <p className="controller-permission-hint">
+            サーバー時刻: {serverNowUs === null ? "—" : formatServerTimeUs(serverNowUs)}
+          </p>
+        </Panel>
+      )}
     </div>
   );
 }
