@@ -75,3 +75,11 @@ body {
   color: var(--color-text-primary);
   font-family: var(--font-body);
 }
+
+@media (hover: hover) {
+  *,
+  *::before,
+  *::after {
+    cursor: none !important;
+  }
+}

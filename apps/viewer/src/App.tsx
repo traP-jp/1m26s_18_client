@@ -1,4 +1,6 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
+import { CustomCursor } from "ui";
 import { Redirect, Route, Switch, useLocation } from "wouter";
 import { ServerTimeProvider } from "protocol";
 import { UrlInputScreen } from "./screens/UrlInputScreen";
@@ -17,6 +19,43 @@ function App() {
   const [room, setRoom] = useState<RoomInfo | null>(null);
   const hostRoom = useHostRoom(room);
 
+  let content: ReactNode;
+  switch (screen) {
+    case "url-input":
+      content = (
+        <UrlInputScreen
+          onNext={(fetchedSong, fetchedBpm, fetchedSongUrl) => {
+            setSong(fetchedSong);
+            setBpm(fetchedBpm);
+            setSongUrl(fetchedSongUrl);
+            setScreen("lobby");
+          }}
+        />
+      );
+      break;
+    case "lobby":
+      content = <LobbyScreen onNext={() => setScreen("live")} song={song} />;
+      break;
+    case "live":
+      content = (
+        <LiveScreen
+          onSongEnd={() => setScreen("url-input")}
+          song={song}
+          bpm={bpm}
+          songUrl={songUrl}
+        />
+      );
+      break;
+    case "motion-test":
+      content = <MotionTestScreen />;
+      break;
+  }
+
+  return (
+    <>
+      <CustomCursor />
+      {content}
+    </>
   return (
     <ServerTimeProvider connection={hostRoom.connection}>
       <Switch>

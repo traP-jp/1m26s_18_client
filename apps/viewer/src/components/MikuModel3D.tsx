@@ -47,11 +47,9 @@ const MIKU_SPOTLIGHT_CONFIGS: StageSpotlightConfig[] = [
   { color: 0xffcf7a, xFactor: 0.13, baseTiltDeg: -9, swayAmplitudeDeg: 2, swayPeriodMs: 7200, swayPhase: 2.6, coneOpacityScale: 1.6 },
 ];
 
-// 添付写真の左右下からの光のような、客席(カメラ)側へ向けて外向きに放つ
-// 明るいライト。スピーカー付近の低い位置から、ほぼ水平に近い角度で放つ。
 const AUDIENCE_SPOTLIGHT_CONFIGS: StageSpotlightConfig[] = [
-  { color: 0xff0000, xFactor: -0.15, baseTiltDeg: -22, swayAmplitudeDeg: 5, swayPeriodMs: 5200, swayPhase: 0, coneOpacityScale: 1 },
-  { color: 0xff0000, xFactor: 0.15, baseTiltDeg: 22, swayAmplitudeDeg: 5, swayPeriodMs: 5200, swayPhase: 2.7, coneOpacityScale: 1 },
+  { color: 0xf3fbff, xFactor: -0.4, baseTiltDeg: -22, swayAmplitudeDeg: 5, swayPeriodMs: 5200, swayPhase: 0, coneOpacityScale: 1.6 },
+  { color: 0xf3fbff, xFactor: 0.4, baseTiltDeg: 22, swayAmplitudeDeg: 5, swayPeriodMs: 5200, swayPhase: 2.7, coneOpacityScale: 1.6 },
 ];
 
 interface StageSpotlight {
@@ -191,23 +189,28 @@ function createLightShaftTexture(): THREE.Texture {
   gradient.addColorStop(1, "rgba(255,255,255,1)");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
-  // eslint-disable-next-line no-console
-  console.log("[DEBUG] after gradient fill:", Array.from(ctx.getImageData(32, 64, 1, 1).data));
 
-  // 等間隔だと人工的に見えるため、筋の幅・濃さを乱数で変えて重ねる。
-  ctx.globalCompositeOperation = "destination-in";
-  let x = 0;
-  while (x < width) {
-    const streakWidth = 2 + Math.random() * 5;
-    const alpha = 0.6 + Math.random() * 0.4;
-    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-    ctx.fillRect(x, 0, streakWidth, height);
-    x += streakWidth;
+  // 等間隔だと人工的に見えるため、筋の幅・濃さを乱数で変えたマスクを別
+  // キャンバスに作り、1回のdestination-inでまとめて重ねる(このcanvas上で
+  // destination-inを逐次呼ぶと、直前の呼び出しでキャンバス全体がその矩形の
+  // 外側まで透明化されてしまい、それまでの筋が消えてしまうため)。
+  const maskCanvas = document.createElement("canvas");
+  maskCanvas.width = width;
+  maskCanvas.height = height;
+  const maskCtx = maskCanvas.getContext("2d");
+  if (maskCtx) {
+    let x = 0;
+    while (x < width) {
+      const streakWidth = 2 + Math.random() * 5;
+      const alpha = 0.6 + Math.random() * 0.4;
+      maskCtx.fillStyle = `rgba(255,255,255,${alpha})`;
+      maskCtx.fillRect(x, 0, streakWidth, height);
+      x += streakWidth;
+    }
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.drawImage(maskCanvas, 0, 0);
+    ctx.globalCompositeOperation = "source-over";
   }
-
-  const sample = ctx.getImageData(32, 64, 1, 1).data;
-  // eslint-disable-next-line no-console
-  console.log("[DEBUG] canvas center pixel RGBA:", Array.from(sample));
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;
@@ -262,31 +265,39 @@ async function attachStageDecor(
   addSpotlightBeams(
     scene,
     stageSpotlights,
-    [{ color: 0x5fd0ff, xFactor: 0, baseTiltDeg: 0, swayAmplitudeDeg: 0, swayPeriodMs: 9999, swayPhase: 0, coneOpacityScale: 1 }],
+    TOP_SPOTLIGHT_CONFIGS,
     coneGeometry,
     lightShaftTexture,
     trussWidth,
     trussY,
     modelHeight * 0.2,
     (27 * Math.PI) / 180,
-    0.5,
-    2,
+    0.05,
   );
-  // eslint-disable-next-line no-console
-  console.log("[DEBUG] via addSpotlightBeams, stageSpotlights now", stageSpotlights.length);
-
-  // eslint-disable-next-line no-console
-  console.log(
-    "[DEBUG] " +
-      JSON.stringify(
-        stageSpotlights.map((s) => ({
-          pos: s.swayGroup.position.toArray(),
-          rotX: s.swayGroup.rotation.x,
-          visible: s.swayGroup.visible,
-          childCount: s.swayGroup.children.length,
-          childVisible: s.swayGroup.children[0]?.visible,
-        })),
-      ),
+  addSpotlightBeams(
+    scene,
+    stageSpotlights,
+    MIKU_SPOTLIGHT_CONFIGS,
+    coneGeometry,
+    lightShaftTexture,
+    trussWidth,
+    trussY,
+    modelHeight * 0.15,
+    (45 * Math.PI) / 180,
+    0.06,
+  );
+  addSpotlightBeams(
+    scene,
+    stageSpotlights,
+    AUDIENCE_SPOTLIGHT_CONFIGS,
+    coneGeometry,
+    lightShaftTexture,
+    trussWidth,
+    modelHeight * 0.4,
+    modelHeight * 0.1,
+    (46 * Math.PI) / 180,
+    0.05,
+    0.5,
   );
 
   buildSpeakerWall(scene, trussWidth, modelHeight);

@@ -1,3 +1,6 @@
+import { useState } from "react";
+import type { ReactNode } from "react";
+import { CustomCursor } from "ui";
 import { useEffect, useRef, useState } from "react";
 import { Redirect, Route, Switch, useLocation, useParams } from "wouter";
 import { Button, Panel } from "ui";
@@ -91,6 +94,27 @@ function RoomLayout() {
 function App() {
   const [, navigate] = useLocation();
 
+  let content: ReactNode;
+  switch (screen) {
+    case "calibration":
+      content = (
+        <CalibrationScreen
+          color={penlightColor}
+          onColorChange={setPenlightColor}
+          onReady={() => setScreen("controller")}
+        />
+      );
+      break;
+    case "controller":
+      content = <ControllerScreen color={penlightColor} onColorChange={setPenlightColor} />;
+      break;
+  }
+
+  return (
+    <>
+      <CustomCursor />
+      {content}
+    </>
   // スマホを振っている間は画面に触れないので、キャリブレーション〜コントローラーの間ずっと自動ロックを抑止する
   useWakeLock();
 
