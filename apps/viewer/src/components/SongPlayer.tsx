@@ -5,6 +5,8 @@ const TEXTALIVE_TOKEN = import.meta.env.VITE_TEXTALIVE_TOKEN as string | undefin
 
 export interface SongPlayerHandle {
   play: () => void;
+  // 一時停止した上で先頭に巻き戻す(TextAlive APIのrequestStop相当)。
+  stop: () => void;
   getPositionMs: () => number;
 }
 
@@ -41,6 +43,13 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
         playerRef.current?.requestPlay();
       } catch (err) {
         console.error("Failed to start song playback", err);
+      }
+    },
+    stop: () => {
+      try {
+        playerRef.current?.requestStop();
+      } catch (err) {
+        console.error("Failed to stop song playback", err);
       }
     },
     getPositionMs: () => {

@@ -234,7 +234,7 @@ body,
 .viewer-stage-placeholder__bg {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 22%, #33194f 0%, #170f2a 38%, #0a0810 68%, #030305 100%);
+  /* background: radial-gradient(circle at 50% 22%, #33194f 0%, #170f2a 38%, #0a0810 68%, #030305 100%); */
 }
 
 .viewer-stage-placeholder__wash {
@@ -467,7 +467,7 @@ body,
 .viewer-backscreen {
   position: absolute;
   left: 50%;
-  top: 64px;
+  top: 34px;
   transform: translateX(-50%);
   z-index: 1;
   width: min(780px, 84%);
@@ -614,13 +614,16 @@ body,
 }
 
 .viewer-miku {
+  /* トラス・スポットライトが画面幅いっぱいに広がる構図にするため、Mikuの
+     3Dキャンバス自体をステージエリア全幅にしている(以前は440px固定の中央
+     カラムだった)。Miku本体は3D側でワールド原点に立っているので、幅が
+     広がっても見た目は中央に残る。 */
   position: absolute;
-  left: 50%;
-  top: 70px;
-  bottom: 170px;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  top: 65px;
+  bottom: 100px;
   z-index: 2;
-  width: 440px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -655,10 +658,13 @@ body,
   letter-spacing: 0.05em;
 }
 .viewer-miku__play-button {
+  /* ヘッダー(z-index:chrome、高さは可変)より確実に下、かつ.viewer-miku自体の
+     高さに左右されないよう、固定pxで上から離す(%指定だと.viewer-mikuが低い
+     ビューポートでヘッダーに埋もれてクリックできなくなる)。 */
   position: absolute;
-  top: 50%;
+  top: 15px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   padding: var(--space-2) var(--space-5);
   border-radius: var(--radius-full);
   border: none;
@@ -675,7 +681,11 @@ body,
   box-shadow: var(--glow-lg);
 }
 .viewer-miku__play-button:active {
-  transform: translate(-50%, -50%) scale(0.96);
+  transform: translateX(-50%) scale(0.96);
+}
+.viewer-miku__play-button--stop {
+  background: #ff4d6d;
+  color: #1a0006;
 }
 
 .viewer-song-player {
@@ -691,6 +701,9 @@ body,
 
 /* Header overlay (song info) */
 .viewer-live__header {
+  /* トラス・スポットライトをヘッダーの高さまで上げても隠れないよう、背景の
+     暗幕を薄くしている(以前は0.75で3D側がほぼ見えなくなっていた)。文字・
+     ボタン自体はopacityを下げず読みやすさを保つ。 */
   position: absolute;
   top: 22px;
   left: 0;
@@ -698,10 +711,31 @@ body,
   z-index: var(--z-chrome);
   padding: var(--space-4) var(--space-6);
   display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: linear-gradient(to bottom, rgba(5, 5, 9, 0.32), transparent);
+}
+.viewer-live__header-top {
+  display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-4);
-  background: linear-gradient(to bottom, rgba(5, 5, 9, 0.75), transparent);
+}
+.viewer-live__header-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  width: auto;
+}
+.viewer-live__header-stats .ui-participant-counter {
+  align-items: flex-end;
+}
+.viewer-live__header-stats .ui-participant-counter__count {
+  font-size: 1.6rem;
+}
+.viewer-live__header-stats .ui-progressbar {
+  width: 25vw;
 }
 .viewer-live__wave-demo {
   display: flex;
@@ -768,11 +802,6 @@ body,
   flex: 1;
   max-width: 320px;
 }
-.viewer-live__progress {
-  padding: 0 var(--space-6) var(--space-4);
-  background: var(--color-bg-surface);
-}
-
 /* Pose tracking (webcam → MMD) */
 .viewer-pose-preview {
   position: absolute;

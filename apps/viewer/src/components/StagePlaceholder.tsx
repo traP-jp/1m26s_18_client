@@ -1,5 +1,3 @@
-import { PENLIGHT_PALETTE } from "ui";
-
 const GRAIN_DATA_URL =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
@@ -9,36 +7,14 @@ const GRAIN_DATA_URL =
     </svg>`,
   );
 
-function Spotlight({ variant }: { variant: "left" | "center" | "right" }) {
-  return (
-    <div className={`viewer-stage-placeholder__spotlight viewer-stage-placeholder__spotlight--${variant}`}>
-      <span className="viewer-stage-placeholder__spotlight-halo" />
-      <span className="viewer-stage-placeholder__spotlight-rays" />
-      <span className="viewer-stage-placeholder__spotlight-core" />
-    </div>
-  );
-}
-
+// トラス・スポットライトは MikuModel3D 側で実際の3Dオブジェクトとして描画するので
+// ここでは背景・ヘイズ・床など「Miku単体のcanvasでは覆いきれない全画面の雰囲気」だけ担当する。
 export function StagePlaceholder() {
   return (
     <div className="viewer-stage-placeholder" aria-hidden="true">
       <div className="viewer-stage-placeholder__bg" />
       <div className="viewer-stage-placeholder__wash viewer-stage-placeholder__wash--a" />
       <div className="viewer-stage-placeholder__wash viewer-stage-placeholder__wash--b" />
-
-      <div className="viewer-stage-placeholder__truss">
-        {PENLIGHT_PALETTE.map((color, i) => (
-          <span
-            key={i}
-            className="viewer-stage-placeholder__truss-light"
-            style={{ backgroundColor: color, boxShadow: `0 0 10px ${color}, 0 30px 40px ${color}` }}
-          />
-        ))}
-      </div>
-
-      <Spotlight variant="left" />
-      <Spotlight variant="center" />
-      <Spotlight variant="right" />
 
       <div className="viewer-stage-placeholder__haze">
         <span className="viewer-stage-placeholder__haze-cloud viewer-stage-placeholder__haze-cloud--a" />
@@ -53,10 +29,6 @@ export function StagePlaceholder() {
         style={{ backgroundImage: `url("${GRAIN_DATA_URL}")` }}
       />
       <div className="viewer-stage-placeholder__vignette" />
-
-      <span className="viewer-stage-placeholder__label">
-        STAGE VISUAL (three.js / PixiJS 実装予定)
-      </span>
     </div>
   );
 }

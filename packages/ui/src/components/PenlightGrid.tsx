@@ -21,9 +21,9 @@ interface RowConfig {
 }
 
 const ROWS: RowConfig[] = [
-  { key: "row1", scale: 1.25, opacity: 1, bottomPct: 0, saturate: 1, blurPx: 1.4 },
-  { key: "row2", scale: 0.88, opacity: 0.78, bottomPct: 32, saturate: 0.82, blurPx: 0.4 },
-  { key: "row3", scale: 0.6, opacity: 0.55, bottomPct: 58, saturate: 0.62, blurPx: 0 },
+  { key: "row1", scale: 1.55, opacity: 1, bottomPct: 0, saturate: 1, blurPx: 1.4 },
+  { key: "row2", scale: 1.08, opacity: 0.99, bottomPct: 28, saturate: 0.82, blurPx: 0.4 },
+  { key: "row3", scale: 0.9, opacity: 0.98, bottomPct: 48, saturate: 0.62, blurPx: 0 },
 ];
 const ROW_PATTERN = [2, 1, 2, 0, 1, 2];
 
