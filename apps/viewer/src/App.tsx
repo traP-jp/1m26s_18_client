@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Redirect, Route, Switch, useLocation } from "wouter";
 import { UrlInputScreen } from "./screens/UrlInputScreen";
 import { LobbyScreen } from "./screens/LobbyScreen";
 import { LiveScreen } from "./screens/LiveScreen";
@@ -7,59 +8,53 @@ import { useHostRoom } from "./api/useHostRoom";
 import type { RoomInfo } from "./api/rooms";
 import type { SongData } from "./api/songs";
 
-type Screen = "url-input" | "lobby" | "live" | "motion-test";
-
-const SCREENS: Screen[] = ["url-input", "lobby", "live", "motion-test"];
-
-function getInitialScreen(): Screen {
-  const requested = new URLSearchParams(window.location.search).get("screen");
-  return (SCREENS as string[]).includes(requested ?? "") ? (requested as Screen) : "url-input";
-}
-
 function App() {
-  const [screen, setScreen] = useState<Screen>(getInitialScreen);
+  const [, navigate] = useLocation();
   const [song, setSong] = useState<SongData | null>(null);
   const [bpm, setBpm] = useState<number | null>(null);
   const [songUrl, setSongUrl] = useState("");
   const [room, setRoom] = useState<RoomInfo | null>(null);
   const hostRoom = useHostRoom(room);
 
-  switch (screen) {
-    case "url-input":
-      return (
+  return (
+    <Switch>
+      <Route path="/">
         <UrlInputScreen
           onNext={(fetchedSong, fetchedBpm, fetchedSongUrl, fetchedRoom) => {
             setSong(fetchedSong);
             setBpm(fetchedBpm);
             setSongUrl(fetchedSongUrl);
             setRoom(fetchedRoom);
-            setScreen("lobby");
+            navigate("/lobby");
           }}
         />
-      );
-    case "lobby":
-      return (
+      </Route>
+      <Route path="/lobby">
         <LobbyScreen
-          onNext={() => setScreen("live")}
+          onNext={() => navigate("/live")}
           song={song}
           room={room}
           hostRoom={hostRoom}
         />
-      );
-    case "live":
-      return (
+      </Route>
+      <Route path="/live">
         <LiveScreen
           onSongEnd={() => {
             setRoom(null);
-            setScreen("url-input");
+            navigate("/");
           }}
           song={song}
           bpm={bpm}
           songUrl={songUrl}
         />
-      );
-    case "motion-test":
-      return <MotionTestScreen />;
-  }
+      </Route>
+      <Route path="/motion-test">
+        <MotionTestScreen />
+      </Route>
+      <Route path="/:rest*">
+        <Redirect to="/" replace />
+      </Route>
+    </Switch>
+  );
 }
 export default App;

@@ -12,12 +12,13 @@
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.0.1",
     "@yohawing/three-mmd-loader": "^0.8.1",
+    "protocol": "*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "textalive-app-api": "^0.4.0",
     "three": "^0.185.1",
     "ui": "*",
-    "protocol": "*"
+    "wouter": "^3.10.0"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
