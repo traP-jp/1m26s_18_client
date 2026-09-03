@@ -60,6 +60,12 @@ npm run preview -- viewer motion-test
 再生速度を確認できます。モーションの追加方法・本番のverse/chorusローテーションの仕組みは
 [motions.md](../motions.md) を参照。
 
+## 部屋参加QRコード
+
+ロビー画面には controller の参加 URL(`<controller のベースURL>/room/<ルームコード>`)をエンコードした QR コードを表示します。
+QR の URL は `VITE_CONTROLLER_BASE_URL`(`apps/viewer/.env.example` 参照)で上書きできます。未設定時は viewer と同じホストのポート 5174 を自動導出します。
+スマホ実機でスキャンする場合は、PC の LAN IP を指定した HTTPS URL(例: `https://192.168.1.5:5174`)を設定してください。
+
 ## スマホ実機での動作確認(モーションセンサー)
 
 `DeviceMotionEvent` は iOS では HTTPS でないと無効(許可ダイアログも出ない)ため、実機では自己署名 HTTPS で起動します。
