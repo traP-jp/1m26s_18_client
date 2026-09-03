@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Redirect, Route, Switch, useLocation, useParams } from "wouter";
+import { Button, Panel } from "ui";
 import { CalibrationScreen } from "./screens/CalibrationScreen";
 import { ControllerScreen } from "./screens/ControllerScreen";
 import { JoinScreen } from "./screens/JoinScreen";
@@ -41,15 +42,30 @@ function RoomLayout() {
     };
   }, [connection, navigate]);
 
-  // 部屋に参加できなければコードの再入力のためルートへ戻す
-  useEffect(() => {
-    if (room.status === "error") {
-      navigate("~/", { replace: true });
-    }
-  }, [room.status, navigate]);
-
   if (roomCode === null) {
     return <Redirect to="~/" replace />;
+  }
+
+  if (room.status === "error") {
+    return (
+      <div className="controller-join">
+        <Panel className="controller-join__panel" glow>
+          <p className="controller-join__eyebrow">ペンライトコントローラー</p>
+          <h1 className="controller-join__title">部屋に入れませんでした</h1>
+          <p className="controller-join__hint">
+            ルームコード: {roomCode}
+            <br />
+            {room.errorMessage ??
+              "部屋への参加に失敗しました"}
+          </p>
+          <div className="controller-join__form">
+            <Button type="button" onClick={() => navigate("~/")}>
+              コード入力に戻る
+            </Button>
+          </div>
+        </Panel>
+      </div>
+    );
   }
 
   return (

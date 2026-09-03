@@ -44,7 +44,7 @@ npm run preview -- controller controller
 
 (devサーバーが起動済みであることが前提です。手動でURLを開く場合は `http://localhost:5173/live` のように直接指定しても同じです。)
 
-注: controller の calibration / controller は参加接続が失敗すると自動で `/` に戻るため、実際に作成した部屋のコードで開く必要があります。
+注: controller の calibration / controller は実際に作成した部屋のコードで開く必要があります。
 
 ### モーション単体テスト(`motion-test`)
 
@@ -64,7 +64,8 @@ npm run preview -- viewer motion-test
 
 ロビー画面には controller の参加 URL(`<controller のベースURL>/room/<ルームコード>`)をエンコードした QR コードを表示します。
 QR の URL は `VITE_CONTROLLER_BASE_URL`(`apps/viewer/.env.example` 参照)で上書きできます。未設定時は viewer と同じホストのポート 5174 を自動導出します。
-スマホ実機でスキャンする場合は、PC の LAN IP を指定した HTTPS URL(例: `https://192.168.1.5:5174`)を設定してください。
+スマホ実機でスキャンする場合は、PC の LAN IP を指定した HTTPS URL(例: `https://192.168.1.5:5174`)を設定してください(末尾スラッシュ付きでも正規化されます)。
+実機の controller から API サーバに届かないと部屋画面でエラー表示になります。`VITE_API_BASE` / `VITE_WEBTRANSPORT_HOST` が `localhost` の場合は開いているページのホスト名に自動置換されますが、API サーバ自体が LAN から到達可能(バインド・FW・CORS)である必要があります。controller を `https` で開く場合、API 側も到達可能な `https`(または同一スキーム)にしてください(`http` のままだと mixed-content で遮断されます)。
 
 ## スマホ実機での動作確認(モーションセンサー)
 
