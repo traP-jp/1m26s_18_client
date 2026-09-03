@@ -69,17 +69,19 @@ body,
   overflow: hidden;
   background: var(--color-bg-primary);
 }
-.viewer-url-input__ambience {
+/* ステージの光演出・タイトル発光・下部固定チケットバーは、URL入力/ロビーなど
+   「コンサート会場にいる」ことを共通のトーンで演出する画面すべてで使い回す。 */
+.viewer-stage-ambience {
   position: absolute;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
 }
-.viewer-url-input__glow {
+.viewer-stage-ambience__glow {
   position: absolute;
   mix-blend-mode: screen;
 }
-.viewer-url-input__glow--warm {
+.viewer-stage-ambience__glow--warm {
   top: -20%;
   left: 50%;
   width: 140%;
@@ -87,7 +89,7 @@ body,
   transform: translateX(-50%);
   background: radial-gradient(ellipse 50% 50% at 50% 0%, rgba(255, 190, 110, 0.16), transparent 70%);
 }
-.viewer-url-input__glow--cool {
+.viewer-stage-ambience__glow--cool {
   bottom: -30%;
   left: 50%;
   width: 120%;
@@ -95,7 +97,7 @@ body,
   transform: translateX(-50%);
   background: radial-gradient(ellipse 50% 50% at 50% 100%, rgba(0, 200, 255, 0.1), transparent 70%);
 }
-.viewer-url-input__beams {
+.viewer-stage-ambience__beams {
   position: absolute;
   inset: 0;
   opacity: 0.5;
@@ -104,6 +106,14 @@ body,
     rgba(255, 220, 160, 0.05) 0deg 4deg,
     transparent 4deg 14deg
   );
+}
+.viewer-stage-title {
+  margin: var(--space-2) 0;
+  font-size: clamp(2.2rem, 5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--color-text-primary);
+  text-shadow: var(--glow-md), 0 0 48px rgba(255, 190, 110, 0.3);
 }
 .viewer-url-input__content {
   position: relative;
@@ -116,14 +126,6 @@ body,
 .viewer-url-input__header {
   text-align: center;
   margin-bottom: var(--space-6);
-}
-.viewer-url-input__title {
-  margin: var(--space-2) 0;
-  font-size: clamp(2.2rem, 5vw, 3rem);
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  color: var(--color-text-primary);
-  text-shadow: var(--glow-md), 0 0 48px rgba(255, 190, 110, 0.3);
 }
 
 /* セットリスト本体 */
@@ -251,12 +253,12 @@ body,
   color: inherit;
   text-decoration: underline;
 }
-.viewer-url-input__footer-spacer {
+.viewer-stage-footer-spacer {
   height: 96px;
 }
 
 /* 画面下部固定のチケット半券バー */
-.viewer-url-input__ticket {
+.viewer-stage-ticket {
   position: fixed;
   left: 0;
   right: 0;
@@ -271,15 +273,15 @@ body,
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px dashed var(--color-border);
 }
-.viewer-url-input__ticket-info {
+.viewer-stage-ticket__info {
   flex: 1;
   min-width: 0;
 }
-.viewer-url-input__ticket-status {
+.viewer-stage-ticket__status {
   font-size: 0.85rem;
   color: var(--color-accent);
 }
-.viewer-url-input__ticket-status--muted {
+.viewer-stage-ticket__status--muted {
   color: var(--color-text-muted);
 }
 
@@ -315,83 +317,113 @@ body,
   overflow: hidden;
 }
 
+/* Lobby(BACKSTAGE)画面: URL入力画面と同じステージ光アンビエンス+発光タイトル+
+   下部固定チケットバーの語彙を共有し、「同じコンサート会場の中にいる」統一感を出す。 */
 .viewer-lobby {
+  position: relative;
   min-height: 100vh;
   display: flex;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--color-bg-primary);
+}
+.viewer-lobby__content {
+  position: relative;
+  z-index: 1;
+  width: min(960px, 100%);
+  padding: var(--space-7) var(--space-6) var(--space-6);
+  display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  padding: var(--space-6);
 }
 .viewer-lobby__header {
-  display: flex;
-  align-items: center;
-}
-.viewer-lobby__body {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: var(--space-5);
-  min-height: 0;
-}
-.viewer-lobby__hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-6);
   text-align: center;
 }
-.viewer-lobby__hero-label {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-accent);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-.viewer-lobby__hero .ui-room-join {
-  gap: var(--space-6);
-}
-.viewer-lobby__hero .ui-room-join__qr {
-  width: 180px;
-  height: 180px;
-  border-radius: var(--radius-lg);
-}
-.viewer-lobby__hero .ui-room-join__label {
-  font-size: 1rem;
-}
-.viewer-lobby__hero .ui-room-join__code {
-  font-size: 3.5rem;
-}
-.viewer-lobby__hero .ui-room-join__url {
-  font-size: 1.05rem;
-}
-.viewer-lobby__stats {
+.viewer-lobby__header-row {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  margin-top: var(--space-3);
+}
+.viewer-lobby__body {
+  display: flex;
+  justify-content: center;
   min-height: 0;
 }
-.viewer-lobby__stats .viewer-lobby__panel {
-  flex: 1;
+
+/* バックステージパス風の参加案内カード。パネル類を削った分、主役として
+   画面の中心に大きく構える。 */
+.viewer-lobby__pass {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-}
-.viewer-lobby__stats .viewer-panel-title {
-  font-size: 1.1rem;
-}
-.viewer-lobby__panel--count {
   align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  width: min(560px, 100%);
+  padding: var(--space-7) var(--space-6);
+  border-radius: var(--radius-lg);
+  border: 1.5px dashed var(--color-accent);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--glow-md);
+  text-align: center;
 }
-.viewer-lobby__panel--count .ui-participant-counter__count {
+.viewer-lobby__pass-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  letter-spacing: 0.25em;
+  text-shadow: var(--glow-sm);
+}
+.viewer-lobby__pass .ui-room-join {
+  gap: var(--space-6);
+}
+.viewer-lobby__pass .ui-room-join__qr {
+  width: 200px;
+  height: 200px;
+  border-radius: var(--radius-lg);
+}
+.viewer-lobby__pass .ui-room-join__label {
+  font-size: 1rem;
+}
+.viewer-lobby__pass .ui-room-join__code {
+  font-family: var(--font-hud);
   font-size: 4rem;
+  color: var(--color-accent);
+  text-shadow: var(--glow-sm);
 }
-.viewer-lobby__panel--count .ui-participant-counter__label {
+.viewer-lobby__pass .ui-room-join__url {
   font-size: 1.05rem;
 }
-.viewer-lobby__footer {
+.viewer-lobby__pass-hint {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+/* 開発用デバッグ情報は本編の演出から浮かないよう、控えめな別枠に */
+.viewer-lobby__debug {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  opacity: 0.7;
+}
+.viewer-lobby__debug-tag {
+  flex-shrink: 0;
+  font-family: var(--font-hud);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+.viewer-lobby__debug .viewer-hint {
+  flex: 1;
+  margin: 0;
 }
 
 /* Live screen */
