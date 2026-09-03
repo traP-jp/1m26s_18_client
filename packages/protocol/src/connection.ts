@@ -11,6 +11,24 @@ export interface RoomConnectOptions {
   serverCertificateHashes?: ServerCertificateHash[];
 }
 
+/**
+ * 単調時計(performance.now())由来の unix エポック時刻 (ms)。
+ * Date.now() と異なりページ表示中のシステム時計のジャンプの影響を受けない。
+ */
+export function epochNowMs(): number {
+  return performance.timeOrigin + performance.now();
+}
+
+/** 送受信時刻付きの `request()` 結果。時刻同期などで t0/t3 の正確な記録が必要な場合に使う */
+export interface TimedResponse {
+  /** サーバーからの応答。接続が閉じられていた場合は null */
+  response: ServerMessage | null;
+  /** リクエスト書き込み直前のローカル時刻 (unix エポック ms) */
+  sentAtMs: number;
+  /** 応答受信直後のローカル時刻 (unix エポック ms)。sentAtMs と同じ基準 */
+  receivedAtMs: number;
+}
+
 export class RoomConnection {
   readonly #transport: WebTransport;
   readonly #datagramWriter: WritableStreamDefaultWriter<Uint8Array>;
@@ -56,17 +74,28 @@ export class RoomConnection {
   }
 
   async request(message: ClientMessage): Promise<ServerMessage | null> {
+    const { response } = await this.requestTimed(message);
+    return response;
+  }
+
+  async requestTimed(message: ClientMessage): Promise<TimedResponse> {
     const stream = await this.#transport.createBidirectionalStream();
     const writer = stream.writable.getWriter();
     const reader = stream.readable.getReader();
     try {
+      const sentAtMs = epochNowMs();
       await writer.write(encodeClientMessage(message));
       await writer.close();
       const chunks = await readAll(reader);
+      const receivedAtMs = epochNowMs();
       if (chunks.length === 0) {
-        return null;
+        return { response: null, sentAtMs, receivedAtMs };
       }
-      return decodeServerMessage(concatChunks(chunks));
+      return {
+        response: decodeServerMessage(concatChunks(chunks)),
+        sentAtMs,
+        receivedAtMs,
+      };
     } finally {
       reader.releaseLock();
       writer.releaseLock();
