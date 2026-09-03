@@ -18,7 +18,7 @@ const IDLE: ParticipantRoomState = {
   participantId: null,
 };
 
-export function useParticipantRoom(roomId: string | null, attempt: number): ParticipantRoomState {
+export function useParticipantRoom(roomId: string | null): ParticipantRoomState {
   const [state, setState] = useState<ParticipantRoomState>(() =>
     roomId ? { status: "connecting", errorMessage: null, connection: null, participantId: null } : IDLE,
   );
@@ -55,7 +55,7 @@ export function useParticipantRoom(roomId: string | null, attempt: number): Part
     return () => {
       cancelled = true;
     };
-  }, [roomId, attempt]);
+  }, [roomId]);
 
   return state;
 }

@@ -28,7 +28,10 @@ npm run dev:controller # controller のみ
 
 ## 画面ごとのプレビュー
 
-毎回クリックで遷移しなくても、URLの `?screen=` クエリで直接その画面を開けます。
+毎回クリックで遷移しなくても、パスで直接その画面を開けます。
+
+- viewer: `/`(URL入力) / `/lobby` / `/live` / `/motion-test`
+- controller: `/`(参加コード入力) / `/room/<4桁のコード>`(キャリブレーション。QR参加もここに着地) / `/room/<4桁のコード>/controller`
 
 ```
 npm run preview -- viewer url-input
@@ -39,7 +42,9 @@ npm run preview -- controller calibration
 npm run preview -- controller controller
 ```
 
-(devサーバーが起動済みであることが前提です。手動でURLを開く場合は `http://localhost:5173/?screen=live` のように直接指定しても同じです。)
+(devサーバーが起動済みであることが前提です。手動でURLを開く場合は `http://localhost:5173/live` のように直接指定しても同じです。)
+
+注: controller の calibration / controller は参加接続が失敗すると自動で `/` に戻るため、実際に作成した部屋のコードで開く必要があります。
 
 ### モーション単体テスト(`motion-test`)
 
@@ -49,7 +54,7 @@ npm run preview -- controller controller
 npm run preview -- viewer motion-test
 ```
 
-または `http://localhost:5173/?screen=motion-test` を直接開く。プルダウンから
+または `http://localhost:5173/motion-test` を直接開く。プルダウンから
 [`apps/viewer/src/motions.ts`](./apps/viewer/src/motions.ts) に登録済みのモーションを選び、
 「このモーションの想定BPM(referenceBpm)」と「テストする曲のBPM」を調整しながら実際の
 再生速度を確認できます。モーションの追加方法・本番のverse/chorusローテーションの仕組みは
