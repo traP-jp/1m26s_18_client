@@ -11,3 +11,4 @@ export * from "./components/PenlightGrid";
 export * from "./components/ColorPicker";
 export * from "./components/ReactionOverlay";
 export * from "./components/IconToggleButton";
+export * from "./components/CustomCursor";

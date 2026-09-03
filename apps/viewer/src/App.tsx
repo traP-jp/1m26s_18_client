@@ -1,4 +1,6 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
+import { CustomCursor } from "ui";
 import { UrlInputScreen } from "./screens/UrlInputScreen";
 import { LobbyScreen } from "./screens/LobbyScreen";
 import { LiveScreen } from "./screens/LiveScreen";
@@ -20,9 +22,10 @@ function App() {
   const [bpm, setBpm] = useState<number | null>(null);
   const [songUrl, setSongUrl] = useState("");
 
+  let content: ReactNode;
   switch (screen) {
     case "url-input":
-      return (
+      content = (
         <UrlInputScreen
           onNext={(fetchedSong, fetchedBpm, fetchedSongUrl) => {
             setSong(fetchedSong);
@@ -32,10 +35,12 @@ function App() {
           }}
         />
       );
+      break;
     case "lobby":
-      return <LobbyScreen onNext={() => setScreen("live")} song={song} />;
+      content = <LobbyScreen onNext={() => setScreen("live")} song={song} />;
+      break;
     case "live":
-      return (
+      content = (
         <LiveScreen
           onSongEnd={() => setScreen("url-input")}
           song={song}
@@ -43,8 +48,17 @@ function App() {
           songUrl={songUrl}
         />
       );
+      break;
     case "motion-test":
-      return <MotionTestScreen />;
+      content = <MotionTestScreen />;
+      break;
   }
+
+  return (
+    <>
+      <CustomCursor />
+      {content}
+    </>
+  );
 }
 export default App;
