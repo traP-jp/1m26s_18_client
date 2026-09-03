@@ -10,7 +10,7 @@ import {
   mockReadyRatio,
   mockRoomCode,
 } from "../mockData";
-import { CONTROLLER_BASE_URL } from "../api/config";
+import { buildControllerJoinUrl } from "../api/config";
 
 export interface LobbyScreenProps {
   onNext: () => void;
@@ -22,7 +22,7 @@ export interface LobbyScreenProps {
 export function LobbyScreen({ onNext, song, room, hostRoom }: LobbyScreenProps) {
   const status = hostRoom?.status ?? "idle";
   const roomCode = room?.roomId ?? mockRoomCode;
-  const joinUrl = `${CONTROLLER_BASE_URL}/room/${roomCode}`;
+  const joinUrl = buildControllerJoinUrl(roomCode);
   const title = song?.type === "complete" ? song.title : mockSong.title;
   const artist = song?.type === "complete" ? song.artist : mockSong.artist;
   const chorusSections: ProgressSegment[] =
