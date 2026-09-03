@@ -48,6 +48,7 @@ function App() {
             song={song}
             bpm={bpm}
             songUrl={songUrl}
+            connection={hostRoom.connection}
           />
         </Route>
         <Route path="/motion-test">
