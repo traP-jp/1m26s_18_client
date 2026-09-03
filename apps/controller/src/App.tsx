@@ -1,9 +1,6 @@
-import { useState } from "react";
-import type { ReactNode } from "react";
-import { CustomCursor } from "ui";
 import { useEffect, useRef, useState } from "react";
 import { Redirect, Route, Switch, useLocation, useParams } from "wouter";
-import { Button, Panel } from "ui";
+import { Button, CustomCursor, Panel } from "ui";
 import { ServerTimeProvider } from "protocol";
 import { CalibrationScreen } from "./screens/CalibrationScreen";
 import { ControllerScreen } from "./screens/ControllerScreen";
@@ -94,43 +91,25 @@ function RoomLayout() {
 function App() {
   const [, navigate] = useLocation();
 
-  let content: ReactNode;
-  switch (screen) {
-    case "calibration":
-      content = (
-        <CalibrationScreen
-          color={penlightColor}
-          onColorChange={setPenlightColor}
-          onReady={() => setScreen("controller")}
-        />
-      );
-      break;
-    case "controller":
-      content = <ControllerScreen color={penlightColor} onColorChange={setPenlightColor} />;
-      break;
-  }
-
-  return (
-    <>
-      <CustomCursor />
-      {content}
-    </>
   // スマホを振っている間は画面に触れないので、キャリブレーション〜コントローラーの間ずっと自動ロックを抑止する
   useWakeLock();
 
   return (
-    <Switch>
-      <Route path="/">
-        <JoinScreen onJoin={(code) => navigate(`/room/${code}`)} />
-      </Route>
-      <Route path={ROOM_ROUTE} nest>
-        <RoomLayout />
-      </Route>
-      {/* 未知のパス(複数セグメント含む)は参加コード入力へ */}
-      <Route>
-        <Redirect to="/" replace />
-      </Route>
-    </Switch>
+    <>
+      <CustomCursor />
+      <Switch>
+        <Route path="/">
+          <JoinScreen onJoin={(code) => navigate(`/room/${code}`)} />
+        </Route>
+        <Route path={ROOM_ROUTE} nest>
+          <RoomLayout />
+        </Route>
+        {/* 未知のパス(複数セグメント含む)は参加コード入力へ */}
+        <Route>
+          <Redirect to="/" replace />
+        </Route>
+      </Switch>
+    </>
   );
 }
 

@@ -1,17 +1,10 @@
 import { useEffect, useState } from "react";
-import { Button, Gauge, ParticipantCounter, Panel, ProgressBar, RoomJoinCard } from "ui";
-import type { ProgressSegment } from "ui";
+import { Button, ParticipantCounter, RoomJoinCard } from "ui";
 import { useServerTime } from "protocol";
 import type { SongData } from "../api/songs";
 import type { RoomInfo } from "../api/rooms";
 import type { HostRoomState } from "../api/useHostRoom";
-import {
-  mockSong,
-  mockChorusSections,
-  mockParticipantCount,
-  mockReadyRatio,
-  mockRoomCode,
-} from "../mockData";
+import { mockSong, mockParticipantCount, mockRoomCode } from "../mockData";
 import { buildControllerJoinUrl } from "../api/config";
 
 export interface LobbyScreenProps {
@@ -44,75 +37,72 @@ export function LobbyScreen({ onNext, song, room, hostRoom }: LobbyScreenProps) 
   }, []);
   const title = song?.type === "complete" ? song.title : mockSong.title;
   const artist = song?.type === "complete" ? song.artist : mockSong.artist;
-  const chorusSections: ProgressSegment[] =
-    song && song.durationMs > 0
-      ? song.segments
-        .filter((seg) => seg.isChorus)
-        .map((seg) => ({
-          startPct: (seg.startsAtMs / song.durationMs) * 100,
-          endPct: (seg.endsAtMs / song.durationMs) * 100,
-          type: "chorus" as const,
-        }))
-      : mockChorusSections;
+
+  const isConnecting = room != null && status !== "connected";
 
   return (
     <div className="viewer-lobby">
-      <header className="viewer-lobby__header">
-        <div className="viewer-song-card">
-          <div className="viewer-song-card__thumb" aria-hidden="true" />
-          <div className="viewer-song-card__meta">
-            <span className="viewer-song-card__title">{title}</span>
-            <span className="viewer-song-card__artist">{artist}</span>
-          </div>
-        </div>
-      </header>
-
-      <div className="viewer-lobby__body">
-        <Panel className="viewer-lobby__hero" glow>
-          <span className="viewer-lobby__hero-label">参加はこちらから</span>
-          <RoomJoinCard roomCode={roomCode} joinUrl={joinUrl} />
-        </Panel>
-
-        <div className="viewer-lobby__stats">
-          <Panel className="viewer-lobby__panel viewer-lobby__panel--count">
-            <ParticipantCounter count={mockParticipantCount} />
-          </Panel>
-
-          <Panel className="viewer-lobby__panel">
-            <h2 className="viewer-panel-title">全体ゲージ(準備完了度)</h2>
-            <Gauge valuePct={mockReadyRatio} label="キャリブレーション完了率" />
-          </Panel>
-
-          <Panel className="viewer-lobby__panel">
-            <h2 className="viewer-panel-title">曲の進行プレビュー</h2>
-            <ProgressBar segments={chorusSections} progressPct={0} />
-            <p className="viewer-hint">オレンジ区間がサビです</p>
-          </Panel>
-        </div>
+      <div className="viewer-stage-ambience" aria-hidden="true">
+        <div className="viewer-stage-ambience__glow viewer-stage-ambience__glow--warm" />
+        <div className="viewer-stage-ambience__glow viewer-stage-ambience__glow--cool" />
+        <div className="viewer-stage-ambience__beams" />
       </div>
 
-      <div className="viewer-lobby__footer">
-        <Button onClick={onNext} disabled={room != null && status !== "connected"}>
+      <div className="viewer-lobby__content">
+        <header className="viewer-lobby__header">
+          <p className="viewer-eyebrow">ようこそ、今日は来てくれてありがとう。最後までみんなで楽しもう！</p>
+          <h1 className="viewer-stage-title">BACKSTAGE</h1>
+          <div className="viewer-lobby__header-row">
+            <div className="viewer-song-card">
+              <div className="viewer-song-card__thumb" aria-hidden="true" />
+              <div className="viewer-song-card__meta">
+                <span className="viewer-song-card__title">{title}</span>
+                <span className="viewer-song-card__artist">{artist}</span>
+              </div>
+            </div>
+            <ParticipantCounter count={mockParticipantCount} label="参加人数" />
+          </div>
+        </header>
+
+        <div className="viewer-lobby__body">
+          <div className="viewer-lobby__pass">
+            <span className="viewer-lobby__pass-label">BACKSTAGE PASS</span>
+            <RoomJoinCard roomCode={roomCode} joinUrl={joinUrl} />
+            <span className="viewer-lobby__pass-hint">
+              このコードをコントローラー端末に入力して参加
+            </span>
+          </div>
+        </div>
+
+        {import.meta.env.DEV && (
+          <div className="viewer-lobby__debug">
+            <span className="viewer-lobby__debug-tag">DEV</span>
+            <p className="viewer-hint">
+              時刻同期: {serverTime.synced ? "同期済み" : "同期中…"}
+              {serverTime.offsetUs !== null && ` / オフセット: ${(serverTime.offsetUs / 1000).toFixed(1)}ms`}
+              {serverTime.rttMs !== null && ` / RTT: ${serverTime.rttMs.toFixed(1)}ms`}
+              {" / "}
+              サーバー時刻: {serverNowUs === null ? "—" : formatServerTimeUs(serverNowUs)}
+            </p>
+            <Button variant="ghost" onClick={() => serverTime.resync()}>
+              再同期
+            </Button>
+          </div>
+        )}
+
+        <div className="viewer-stage-footer-spacer" aria-hidden="true" />
+      </div>
+
+      <div className="viewer-stage-ticket">
+        <div className="viewer-stage-ticket__info">
+          <span className={`viewer-stage-ticket__status${isConnecting ? " viewer-stage-ticket__status--muted" : ""}`}>
+            {isConnecting ? "コントローラーの接続待ち…" : "準備完了"}
+          </span>
+        </div>
+        <Button onClick={onNext} disabled={isConnecting}>
           ライブ開始
         </Button>
       </div>
-
-      {import.meta.env.DEV && (
-        <Panel className="viewer-lobby__panel">
-          <h2 className="viewer-panel-title">時刻同期(デバッグ)</h2>
-          <p className="viewer-hint">
-            状態: {serverTime.synced ? "同期済み" : "同期中…"}
-            {serverTime.offsetUs !== null && ` / オフセット: ${(serverTime.offsetUs / 1000).toFixed(1)}ms`}
-            {serverTime.rttMs !== null && ` / RTT: ${serverTime.rttMs.toFixed(1)}ms`}
-          </p>
-          <p className="viewer-hint">
-            サーバー時刻: {serverNowUs === null ? "—" : formatServerTimeUs(serverNowUs)}
-          </p>
-          <Button variant="secondary" onClick={() => serverTime.resync()}>
-            再同期
-          </Button>
-        </Panel>
-      )}
     </div>
   );
 }

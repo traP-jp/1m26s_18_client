@@ -36,7 +36,6 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
       setFetchedForUrl(candidateUrl);
       setStatus("idle");
     } catch (err) {
-      setStatus("error");
       setSong(null);
       setStatus("idle");
       setErrorMessage(err instanceof Error ? err.message : "取得に失敗しました");
@@ -77,16 +76,16 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
 
   return (
     <div className="viewer-url-input">
-      <div className="viewer-url-input__ambience" aria-hidden="true">
-        <div className="viewer-url-input__glow viewer-url-input__glow--warm" />
-        <div className="viewer-url-input__glow viewer-url-input__glow--cool" />
-        <div className="viewer-url-input__beams" />
+      <div className="viewer-stage-ambience" aria-hidden="true">
+        <div className="viewer-stage-ambience__glow viewer-stage-ambience__glow--warm" />
+        <div className="viewer-stage-ambience__glow viewer-stage-ambience__glow--cool" />
+        <div className="viewer-stage-ambience__beams" />
       </div>
 
       <div className="viewer-url-input__content">
         <header className="viewer-url-input__header">
           <p className="viewer-eyebrow">ライブ上映したい曲を選択してね！</p>
-          <h1 className="viewer-url-input__title">SET LIST</h1>
+          <h1 className="viewer-stage-title">SET LIST</h1>
           <p className="viewer-subtitle">
             気になる曲をタップすると、自動で曲情報を取得します。
           </p>
@@ -145,7 +144,7 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
           </p>
         </details>
 
-        {status === "error" && (
+        {errorMessage && (
           <p className="viewer-url-input__error">
             {errorMessage}
             {" — "}
@@ -154,16 +153,15 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
             </a>
           </p>
         )}
-        {errorMessage && <p className="viewer-url-input__error">{errorMessage}</p>}
 
         {/* 下部に固定バーの分だけ余白を確保 */}
-        <div className="viewer-url-input__footer-spacer" aria-hidden="true" />
+        <div className="viewer-stage-footer-spacer" aria-hidden="true" />
       </div>
 
-      <div className="viewer-url-input__ticket">
-        <div className="viewer-url-input__ticket-info">
+      <div className="viewer-stage-ticket">
+        <div className="viewer-stage-ticket__info">
           {status === "loading" && (
-            <span className="viewer-url-input__ticket-status">曲情報を取得中…</span>
+            <span className="viewer-stage-ticket__status">曲情報を取得中…</span>
           )}
           {isReady && (
             <div className="viewer-song-card">
@@ -175,25 +173,15 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
             </div>
           )}
           {!isReady && status !== "loading" && (
-            <span className="viewer-url-input__ticket-status viewer-url-input__ticket-status--muted">
+            <span className="viewer-stage-ticket__status viewer-stage-ticket__status--muted">
               曲を選ぶとここに表示されます
             </span>
           )}
         </div>
-        <Button
-          disabled={!isReady}
-          onClick={() => song && onNext(song, estimateBpm(song.beats), url)}
-        >
-          ロビーへ進む
+        <Button disabled={!isReady || creating} onClick={() => void handleEnterLobby()}>
+          {creating ? "部屋を作成中…" : "ロビーへ進む"}
         </Button>
       </div>
-
-            <Button onClick={handleEnterLobby} disabled={creating}>
-              {creating ? "部屋を作成中…" : "ロビーへ進む"}
-            </Button>
-          </div>
-        )}
-      </Panel>
     </div>
   );
 }
