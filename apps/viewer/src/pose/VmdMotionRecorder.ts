@@ -50,10 +50,15 @@ const DEFAULT_INTERPOLATION = new Uint8Array([
   20, 20, 20, 20, 20, 107, 107, 107, 107, 107, 107, 107, 107, 0, 0, 0,
 ]);
 
+/** センターボーン名「センター」の Shift-JIS バイト列 */
+const CENTER_SJIS = bone("lowerBody", "センター", "835a8393835e815b").sjis;
+
 interface RecordedFrame {
   frameNo: number;
   /** VMD_BONES 順に [x, y, z, w] を詰めた three.js 空間のローカル回転 */
   rotations: Float32Array;
+  /** ルートの横オフセット(three.js 空間、モデル単位)。null なら記録なし */
+  centerOffsetX: number | null;
 }
 
 /**
@@ -102,7 +107,7 @@ export class VmdMotionRecorder {
    * driver.apply() の直後に描画ループから呼ぶこと。録画中でなければ何もしない。
    * 30fps のフレーム番号に丸め、同一フレームへの重複記録はスキップする。
    */
-  capture(driver: MmdPoseDriver, timeMs: number): void {
+  capture(driver: MmdPoseDriver, timeMs: number, centerOffsetX: number | null = null): void {
     if (!this.active) return;
     if (this.presentBoneIndices === null) {
       const present: number[] = [];
@@ -124,13 +129,14 @@ export class VmdMotionRecorder {
       rotations[i * 4 + 2] = this.quat.z;
       rotations[i * 4 + 3] = this.quat.w;
     }
-    this.frames.push({ frameNo, rotations });
+    this.frames.push({ frameNo, rotations, centerOffsetX });
   }
 
   /** 記録内容から VMD ファイルのバイト列を生成する */
   toVmd(modelName = "pose capture"): Uint8Array<ArrayBuffer> {
     const present = this.presentBoneIndices ?? [];
-    const keyframeCount = this.frames.length * present.length;
+    const centerFrameCount = this.frames.reduce((n, f) => n + (f.centerOffsetX !== null ? 1 : 0), 0);
+    const keyframeCount = this.frames.length * present.length + centerFrameCount;
     // ヘッダ30 + モデル名20 + ボーン数4 + キーフレーム + 末尾のセクション数
     // (モーフ / カメラ / 照明 / セルフ影 / IK・表示 の 0 件カウント × 5)
     const byteLength = 30 + 20 + 4 + keyframeCount * BONE_FRAME_BYTES + 4 * 5;
@@ -153,6 +159,16 @@ export class VmdMotionRecorder {
         view.setFloat32(offset + 35, -frame.rotations[i * 4 + 1], true);
         view.setFloat32(offset + 39, frame.rotations[i * 4 + 2], true);
         view.setFloat32(offset + 43, frame.rotations[i * 4 + 3], true);
+        bytes.set(DEFAULT_INTERPOLATION, offset + 47);
+        offset += BONE_FRAME_BYTES;
+      }
+      if (frame.centerOffsetX !== null) {
+        // センター: 位置のみのキー(回転は単位)。x は three.js と MMD で同符号。
+        bytes.set(CENTER_SJIS, offset);
+        view.setUint32(offset + 15, frame.frameNo, true);
+        view.setFloat32(offset + 19, frame.centerOffsetX, true);
+        // y (offset+23) / z (offset+27) は 0、回転 x/y/z (offset+31..42) も 0 のまま
+        view.setFloat32(offset + 43, 1, true); // 回転 w
         bytes.set(DEFAULT_INTERPOLATION, offset + 47);
         offset += BONE_FRAME_BYTES;
       }

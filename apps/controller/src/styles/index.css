@@ -55,6 +55,72 @@ body,
   padding-top: var(--space-4);
 }
 
+/* Join screen */
+.controller-join {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  padding: var(--space-5);
+}
+.controller-join__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  text-align: center;
+}
+.controller-join__eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  color: var(--color-text-muted);
+}
+.controller-join__title {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--color-text-primary);
+}
+.controller-join__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+.controller-join__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.controller-join__input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-family: var(--font-hud);
+  font-size: 2.2rem;
+  text-align: center;
+  letter-spacing: 0.5em;
+  text-indent: 0.5em;
+}
+.controller-join__input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--glow-sm);
+}
+.controller-join__input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.4;
+}
+.controller-join__error {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--color-danger);
+}
+
 .controller-shake-test {
   width: 100%;
   display: flex;
@@ -229,4 +295,77 @@ body,
   padding: var(--space-2) var(--space-4);
   font-size: 0.8rem;
   box-shadow: var(--glow-sm);
+}
+
+/* Motion sensor status / hints */
+.controller-permission-row__status--ok {
+  color: var(--color-success);
+}
+.controller-permission-row__status--error {
+  color: var(--color-danger);
+}
+.controller-permission-hint {
+  margin: var(--space-2) 0 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+.controller-shake-test--live {
+  border-style: solid;
+  border-color: var(--color-accent);
+  cursor: default;
+}
+.controller-shake-test__meter-fill--live {
+  /* 実センサー駆動時は 60fps で値が来るので、アニメーションはほぼ切って追従させる */
+  transition: width 0.05s linear;
+}
+.controller-live__motion-button {
+  font-size: 0.75rem;
+  padding: var(--space-1) var(--space-3);
+}
+
+/* Beat judgement (controller screen) */
+.controller-judgement {
+  position: absolute;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-hud);
+  font-size: 1.1rem;
+  letter-spacing: 0.12em;
+  pointer-events: none;
+  animation: controller-judgement-pop 0.5s ease-out forwards;
+}
+.controller-judgement--perfect {
+  color: var(--color-warning);
+  text-shadow: 0 0 12px var(--color-warning);
+}
+.controller-judgement--good {
+  color: var(--color-success);
+  text-shadow: 0 0 10px var(--color-success);
+}
+.controller-judgement--miss {
+  color: var(--color-text-muted);
+}
+@keyframes controller-judgement-pop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1.1);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(1);
+  }
+}
+.controller-combo--hot {
+  color: var(--color-accent-strong);
+  text-shadow: 0 0 10px var(--color-accent);
 }

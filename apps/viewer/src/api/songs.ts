@@ -1,4 +1,4 @@
-const API_BASE = "https://1m26-18.trap.show/api/v1";
+import { API_BASE } from "./config";
 
 export interface Beat {
   startsAtMs: number;

@@ -10,6 +10,7 @@ import { ThreeMmdLoader, disposeMmdModel } from "@yohawing/three-mmd-loader";
 import type { ThreeMmdModel, MmdAnimation } from "@yohawing/three-mmd-loader";
 import type { RefObject } from "react";
 import { MmdPoseDriver } from "../pose/MmdPoseDriver";
+import { LM } from "../pose/landmarks";
 import type { PoseFrame } from "../pose/landmarks";
 import type { VmdMotionRecorder } from "../pose/VmdMotionRecorder";
 import type { Segment } from "../api/songs";
@@ -356,6 +357,11 @@ export interface MikuModel3DProps {
    * null の間はダンス再生(未再生時は静止ポーズ+ゆっくりした揺れ)に戻る。
    */
   poseFrameRef?: RefObject<PoseFrame | null>;
+  /**
+   * 姿勢推定の正規化画像ランドマーク(0..1 の画像座標)。渡すと、カメラに写っている
+   * 立ち位置(腰の中点の x)に合わせてモデルをステージ上で左右に移動させる。
+   */
+  poseImageFrameRef?: RefObject<PoseFrame | null>;
   /** 鏡写しにするか(デフォルト true) */
   mirror?: boolean;
   /** 渡すと、姿勢駆動中の毎フレームをこのレコーダーへ記録する(録画中のみ) */
@@ -377,6 +383,7 @@ export interface MikuModel3DProps {
 
 export function MikuModel3D({
   poseFrameRef,
+  poseImageFrameRef,
   mirror = true,
   vmdRecorder,
   bpm,
@@ -398,6 +405,8 @@ export function MikuModel3D({
   // can steer it without tearing down and rebuilding the whole WebGL scene.
   const poseFrameRefRef = useRef(poseFrameRef);
   poseFrameRefRef.current = poseFrameRef;
+  const poseImageFrameRefRef = useRef(poseImageFrameRef);
+  poseImageFrameRefRef.current = poseImageFrameRef;
   const mirrorRef = useRef(mirror);
   mirrorRef.current = mirror;
   const vmdRecorderRef = useRef(vmdRecorder);
@@ -541,6 +550,10 @@ export function MikuModel3D({
           console.error("Failed to load stage decor", err);
         });
 
+        // カメラ内の立ち位置追従: ルートを baseX からの横オフセットで動かす
+        const baseX = model.root.position.x;
+        let positionOffsetX = 0;
+
         model.update(0);
         // Bones are driven directly (bypassing the loader runtime) while pose
         // tracking is active. Must be created after update(0) so reset() restores
@@ -607,7 +620,27 @@ export function MikuModel3D({
             if (frame && poseDriver) {
               poseDriver.setMirror(mirrorRef.current);
               poseDriver.apply(frame);
-              vmdRecorderRef.current?.capture(poseDriver, timeMs);
+
+              // 画像内の腰の位置 → ステージ上の横位置。
+              // 見えないフレームでは前回位置を保持し、スムージングで飛びを抑える。
+              const imageFrame = poseImageFrameRefRef.current?.current ?? null;
+              let targetOffsetX = positionOffsetX;
+              if (imageFrame) {
+                const hipL = imageFrame[LM.leftHip];
+                const hipR = imageFrame[LM.rightHip];
+                if (hipL && hipR && Math.min(hipL.visibility, hipR.visibility) >= 0.5) {
+                  const hipX = (hipL.x + hipR.x) / 2; // 0(画像左端)..1(右端)
+                  // 鏡表示ではプレビューと同じ向きに動かす(画像 x を反転)
+                  const norm = mirrorRef.current ? 0.5 - hipX : hipX - 0.5; // -0.5..0.5、+が画面右
+                  // モデル位置(z=0 平面)でのカメラの可視半幅。少し内側に収める。
+                  const halfRange = Math.tan((camera.fov * Math.PI) / 360) * camera.aspect * distance * 0.85;
+                  targetOffsetX = THREE.MathUtils.clamp(norm * 2 * halfRange, -halfRange, halfRange);
+                }
+              }
+              positionOffsetX += (targetOffsetX - positionOffsetX) * 0.3;
+              model.root.position.x = baseX + positionOffsetX;
+
+              vmdRecorderRef.current?.capture(poseDriver, timeMs, positionOffsetX);
               // face the audience while mimicking; ease the sway out
               model.root.rotation.y *= 0.8;
               wasPoseDriven = true;
@@ -616,6 +649,9 @@ export function MikuModel3D({
                 poseDriver.reset();
                 wasPoseDriven = false;
               }
+              // トラッキング終了後は中央へ滑らかに戻す
+              positionOffsetX *= 0.85;
+              model.root.position.x = baseX + positionOffsetX;
               const danceElapsedSec = isPlayingRef.current ? computeDanceElapsedSec(timeMs) : null;
               if (danceElapsedSec !== null) {
                 model.update(danceElapsedSec);

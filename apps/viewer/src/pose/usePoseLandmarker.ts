@@ -11,6 +11,12 @@ export interface UsePoseLandmarkerResult {
   error: string | null;
   /** 最新のワールドランドマーク。人物未検出時は null。毎フレーム更新されるが再レンダーは起こさない。 */
   frameRef: RefObject<PoseFrame | null>;
+  /**
+   * 最新の正規化画像ランドマーク(x/y は 0..1 の画像座標)。人物未検出時は null。
+   * ワールドランドマークは腰中心が原点で画面内の立ち位置を持たないため、
+   * 「カメラのどこに写っているか」はこちらから取る。
+   */
+  imageFrameRef: RefObject<PoseFrame | null>;
   /** プレビュー表示したい場合に <video> へ渡す(省略時は非表示の video を内部生成) */
   videoRef: RefObject<HTMLVideoElement | null>;
 }
@@ -40,6 +46,7 @@ async function createLandmarker(): Promise<PoseLandmarker> {
  */
 export function usePoseLandmarker(enabled: boolean): UsePoseLandmarkerResult {
   const frameRef = useRef<PoseFrame | null>(null);
+  const imageFrameRef = useRef<PoseFrame | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [status, setStatus] = useState<PoseTrackerStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +54,7 @@ export function usePoseLandmarker(enabled: boolean): UsePoseLandmarkerResult {
   useEffect(() => {
     if (!enabled) {
       frameRef.current = null;
+      imageFrameRef.current = null;
       setStatus("idle");
       setError(null);
       return;
@@ -91,6 +99,7 @@ export function usePoseLandmarker(enabled: boolean): UsePoseLandmarkerResult {
         lastVideoTime = video.currentTime;
         const result = lm.detectForVideo(video, performance.now());
         frameRef.current = result.worldLandmarks[0] ?? null;
+        imageFrameRef.current = result.landmarks[0] ?? null;
       };
       loop();
     })().catch((err: unknown) => {
@@ -108,8 +117,9 @@ export function usePoseLandmarker(enabled: boolean): UsePoseLandmarkerResult {
       video.pause();
       video.srcObject = null;
       frameRef.current = null;
+      imageFrameRef.current = null;
     };
   }, [enabled]);
 
-  return { status, error, frameRef, videoRef };
+  return { status, error, frameRef, imageFrameRef, videoRef };
 }

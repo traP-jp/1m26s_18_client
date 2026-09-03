@@ -1,26 +1,23 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { CustomCursor } from "ui";
+import { Redirect, Route, Switch, useLocation } from "wouter";
+import { ServerTimeProvider } from "protocol";
 import { UrlInputScreen } from "./screens/UrlInputScreen";
 import { LobbyScreen } from "./screens/LobbyScreen";
 import { LiveScreen } from "./screens/LiveScreen";
 import { MotionTestScreen } from "./screens/MotionTestScreen";
+import { useHostRoom } from "./api/useHostRoom";
+import type { RoomInfo } from "./api/rooms";
 import type { SongData } from "./api/songs";
 
-type Screen = "url-input" | "lobby" | "live" | "motion-test";
-
-const SCREENS: Screen[] = ["url-input", "lobby", "live", "motion-test"];
-
-function getInitialScreen(): Screen {
-  const requested = new URLSearchParams(window.location.search).get("screen");
-  return (SCREENS as string[]).includes(requested ?? "") ? (requested as Screen) : "url-input";
-}
-
 function App() {
-  const [screen, setScreen] = useState<Screen>(getInitialScreen);
+  const [, navigate] = useLocation();
   const [song, setSong] = useState<SongData | null>(null);
   const [bpm, setBpm] = useState<number | null>(null);
   const [songUrl, setSongUrl] = useState("");
+  const [room, setRoom] = useState<RoomInfo | null>(null);
+  const hostRoom = useHostRoom(room);
 
   let content: ReactNode;
   switch (screen) {
@@ -59,6 +56,47 @@ function App() {
       <CustomCursor />
       {content}
     </>
+  return (
+    <ServerTimeProvider connection={hostRoom.connection}>
+      <Switch>
+        <Route path="/">
+          <UrlInputScreen
+            onNext={(fetchedSong, fetchedBpm, fetchedSongUrl, fetchedRoom) => {
+              setSong(fetchedSong);
+              setBpm(fetchedBpm);
+              setSongUrl(fetchedSongUrl);
+              setRoom(fetchedRoom);
+              navigate("/lobby");
+            }}
+          />
+        </Route>
+        <Route path="/lobby">
+          <LobbyScreen
+            onNext={() => navigate("/live")}
+            song={song}
+            room={room}
+            hostRoom={hostRoom}
+          />
+        </Route>
+        <Route path="/live">
+          <LiveScreen
+            onSongEnd={() => {
+              setRoom(null);
+              navigate("/");
+            }}
+            song={song}
+            bpm={bpm}
+            songUrl={songUrl}
+          />
+        </Route>
+        <Route path="/motion-test">
+          <MotionTestScreen />
+        </Route>
+        <Route path="/:rest*">
+          <Redirect to="/" replace />
+        </Route>
+      </Switch>
+    </ServerTimeProvider>
   );
 }
 export default App;

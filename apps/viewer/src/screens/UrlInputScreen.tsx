@@ -2,18 +2,21 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Button } from "ui";
 import { fetchSongData, estimateBpm } from "../api/songs";
+import { createRoomForSong } from "../api/rooms";
+import type { RoomInfo } from "../api/rooms";
 import type { SongData } from "../api/songs";
 import { CONTEST_SONGS } from "../contestSongs";
 
 export interface UrlInputScreenProps {
-  onNext: (song: SongData, bpm: number | null, songUrl: string) => void;
+  onNext: (song: SongData, bpm: number | null, songUrl: string, room: RoomInfo) => void;
 }
 
-type Status = "idle" | "loading" | "error";
+type Status = "idle" | "loading";
 
 export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState<Status>("idle");
+  const [creating, setCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [song, setSong] = useState<SongData | null>(null);
   // 直近で取得に成功した曲のURL。songがこのURLと一致する間だけ「取得済み」として
@@ -34,6 +37,8 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
       setStatus("idle");
     } catch (err) {
       setStatus("error");
+      setSong(null);
+      setStatus("idle");
       setErrorMessage(err instanceof Error ? err.message : "取得に失敗しました");
     }
   };
@@ -54,6 +59,19 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
   };
 
   const isReady = status === "idle" && !!song && fetchedForUrl === url;
+  const handleEnterLobby = async () => {
+    if (!song || creating) return;
+    setCreating(true);
+    setErrorMessage("");
+    try {
+      const room = await createRoomForSong(url);
+      onNext(song, estimateBpm(song.beats), url, room);
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "部屋の作成に失敗しました");
+    } finally {
+      setCreating(false);
+    }
+  };
   const title = song?.type === "complete" ? song.title : "タイトル未登録の楽曲";
   const artist = song?.type === "complete" ? song.artist : "-";
 
@@ -136,6 +154,7 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
             </a>
           </p>
         )}
+        {errorMessage && <p className="viewer-url-input__error">{errorMessage}</p>}
 
         {/* 下部に固定バーの分だけ余白を確保 */}
         <div className="viewer-url-input__footer-spacer" aria-hidden="true" />
@@ -168,6 +187,13 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
           ロビーへ進む
         </Button>
       </div>
+
+            <Button onClick={handleEnterLobby} disabled={creating}>
+              {creating ? "部屋を作成中…" : "ロビーへ進む"}
+            </Button>
+          </div>
+        )}
+      </Panel>
     </div>
   );
 }

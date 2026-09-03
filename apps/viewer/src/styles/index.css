@@ -283,7 +283,7 @@ body,
   color: var(--color-text-muted);
 }
 
-/* Motion test screen (dev-only, ?screen=motion-test) */
+/* Motion test screen (dev-only, /motion-test) */
 .viewer-motion-test {
   min-height: 100vh;
   display: flex;
@@ -354,7 +354,6 @@ body,
 .viewer-lobby__hero .ui-room-join__qr {
   width: 180px;
   height: 180px;
-  font-size: 1.4rem;
   border-radius: var(--radius-lg);
 }
 .viewer-lobby__hero .ui-room-join__label {
