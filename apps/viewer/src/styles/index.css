@@ -173,7 +173,6 @@ body,
 .viewer-lobby__hero .ui-room-join__qr {
   width: 180px;
   height: 180px;
-  font-size: 1.4rem;
   border-radius: var(--radius-lg);
 }
 .viewer-lobby__hero .ui-room-join__label {

@@ -9,8 +9,8 @@ import {
   mockParticipantCount,
   mockReadyRatio,
   mockRoomCode,
-  mockJoinUrl,
 } from "../mockData";
+import { CONTROLLER_BASE_URL } from "../api/config";
 
 export interface LobbyScreenProps {
   onNext: () => void;
@@ -22,6 +22,7 @@ export interface LobbyScreenProps {
 export function LobbyScreen({ onNext, song, room, hostRoom }: LobbyScreenProps) {
   const status = hostRoom?.status ?? "idle";
   const roomCode = room?.roomId ?? mockRoomCode;
+  const joinUrl = `${CONTROLLER_BASE_URL}/room/${roomCode}`;
   const title = song?.type === "complete" ? song.title : mockSong.title;
   const artist = song?.type === "complete" ? song.artist : mockSong.artist;
   const chorusSections: ProgressSegment[] =
@@ -50,7 +51,7 @@ export function LobbyScreen({ onNext, song, room, hostRoom }: LobbyScreenProps) 
       <div className="viewer-lobby__body">
         <Panel className="viewer-lobby__hero" glow>
           <span className="viewer-lobby__hero-label">参加はこちらから</span>
-          <RoomJoinCard roomCode={roomCode} joinUrl={mockJoinUrl} />
+          <RoomJoinCard roomCode={roomCode} joinUrl={joinUrl} />
         </Panel>
 
         <div className="viewer-lobby__stats">

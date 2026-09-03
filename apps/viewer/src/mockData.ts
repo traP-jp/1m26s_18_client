@@ -19,7 +19,6 @@ export const mockParticipantCount = 248;
 export const mockReadyRatio = 62; // %
 export const mockHeatLevel = 71; // %
 export const mockRoomCode = "1234";
-export const mockJoinUrl = "https://live.example.com/room/1234";
 
 export const mockLyricLine = "";
 
