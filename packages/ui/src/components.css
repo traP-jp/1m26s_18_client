@@ -210,7 +210,7 @@
   opacity: 0.95;
 }
 .ui-penlight-grid__rod-core {
-  fill: #ffffff;
+  /* fill: #ffffff; */
   opacity: 0.75;
 }
 /* The person is deliberately just a hint, not a detailed figure — a soft

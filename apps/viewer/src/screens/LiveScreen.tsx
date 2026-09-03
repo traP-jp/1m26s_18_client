@@ -123,6 +123,7 @@ export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
           vmdRecorder={vmdRecorderRef.current}
           bpm={bpm}
           onPlay={() => songPlayerRef.current?.play()}
+          onStop={() => songPlayerRef.current?.stop()}
           startAtMs={songUrl ? firstBeatMs : undefined}
           getPositionMs={songUrl ? () => songPlayerRef.current?.getPositionMs() ?? 0 : undefined}
           segments={songUrl ? song?.segments : undefined}
@@ -139,11 +140,18 @@ export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
         )}
 
         <header className="viewer-live__header">
-          <div className="viewer-song-card viewer-song-card--compact">
-            <div className="viewer-song-card__thumb" aria-hidden="true" />
-            <div className="viewer-song-card__meta">
-              <span className="viewer-song-card__title">{title}</span>
-              <span className="viewer-song-card__artist">{artist}</span>
+          <div className="viewer-live__header-top">
+            <div className="viewer-song-card viewer-song-card--compact">
+              <div className="viewer-song-card__thumb" aria-hidden="true" />
+              <div className="viewer-song-card__meta">
+                <span className="viewer-song-card__title">{title}</span>
+                <span className="viewer-song-card__artist">{artist}</span>
+              </div>
+            </div>
+
+            <div className="viewer-live__header-stats">
+                            <ProgressBar segments={mockChorusSections} progressPct={mockPlaybackProgressPct} />
+              <ParticipantCounter count={mockParticipantCount} label="参加人数" />
             </div>
           </div>
 
@@ -197,21 +205,14 @@ export function LiveScreen({ onSongEnd, song, bpm, songUrl }: LiveScreenProps) {
         )}
       </div>
 
-      <div className="viewer-live__hud">
-        <div className="viewer-live__hud-item">
-          <ParticipantCounter count={mockParticipantCount} label="視聴人数" />
-        </div>
+      {/* <div className="viewer-live__hud">
         <div className="viewer-live__hud-item viewer-live__hud-item--grow">
           <Gauge valuePct={mockHeatLevel} label="シンクロ度" />
         </div>
         <Button variant="ghost" onClick={onSongEnd}>
           ライブ終了
         </Button>
-      </div>
-
-      <div className="viewer-live__progress">
-        <ProgressBar segments={mockChorusSections} progressPct={mockPlaybackProgressPct} />
-      </div>
+      </div> */}
     </div>
   );
 }
