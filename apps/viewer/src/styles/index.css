@@ -60,6 +60,50 @@ body,
   color: var(--color-text-muted);
 }
 
+/* TOPページ: 楽曲選択より前のサービス入口。他画面と同じステージ光アンビエンス
+   の上に、サービスロゴを主役として大きく置く。 */
+.viewer-top {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--color-bg-primary);
+}
+.viewer-top__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  text-align: center;
+}
+.viewer-top__logo {
+  width: min(680px, 80vw);
+  filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.55)) drop-shadow(0 0 56px rgba(0, 200, 255, 0.3));
+}
+.viewer-top__cta {
+  margin-top: var(--space-3);
+  padding: var(--space-4) var(--space-8);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  animation: viewer-top-cta-pulse 2.4s ease-in-out infinite;
+}
+@keyframes viewer-top-cta-pulse {
+  0%,
+  100% {
+    box-shadow: var(--glow-md);
+  }
+  50% {
+    box-shadow: var(--glow-lg);
+    transform: scale(1.03);
+  }
+}
+
 /* URL input screen */
 .viewer-url-input {
   position: relative;
