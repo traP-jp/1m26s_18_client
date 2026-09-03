@@ -62,6 +62,48 @@ function App() {
         </Switch>
       </ServerTimeProvider>
     </>
+  return (
+    <ServerTimeProvider connection={hostRoom.connection}>
+      <Switch>
+        <Route path="/">
+          <UrlInputScreen
+            onNext={(fetchedSong, fetchedBpm, fetchedSongUrl, fetchedRoom) => {
+              setSong(fetchedSong);
+              setBpm(fetchedBpm);
+              setSongUrl(fetchedSongUrl);
+              setRoom(fetchedRoom);
+              navigate("/lobby");
+            }}
+          />
+        </Route>
+        <Route path="/lobby">
+          <LobbyScreen
+            onNext={() => navigate("/live")}
+            song={song}
+            room={room}
+            hostRoom={hostRoom}
+          />
+        </Route>
+        <Route path="/live">
+          <LiveScreen
+            onSongEnd={() => {
+              setRoom(null);
+              navigate("/");
+            }}
+            song={song}
+            bpm={bpm}
+            songUrl={songUrl}
+            connection={hostRoom.connection}
+          />
+        </Route>
+        <Route path="/motion-test">
+          <MotionTestScreen />
+        </Route>
+        <Route path="/:rest*">
+          <Redirect to="/" replace />
+        </Route>
+      </Switch>
+    </ServerTimeProvider>
   );
 }
 export default App;
