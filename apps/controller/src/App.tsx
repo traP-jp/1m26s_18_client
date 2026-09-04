@@ -6,6 +6,7 @@ import { CalibrationScreen } from "./screens/CalibrationScreen";
 import { ControllerScreen } from "./screens/ControllerScreen";
 import { JoinScreen } from "./screens/JoinScreen";
 import { useParticipantRoom } from "./api/useParticipantRoom";
+import { LiveClockProvider } from "./live/useLiveClock";
 import { useWakeLock } from "./wakeLock/useWakeLock";
 
 const ROOM_ROUTE = "/room/:code";
@@ -71,19 +72,21 @@ function RoomLayout() {
 
   return (
     <ServerTimeProvider connection={room.connection}>
-      <Switch>
-        <Route path="/controller">
-          <ControllerScreen color={penlightColor} onColorChange={setPenlightColor} />
-        </Route>
-        {/* /room/:code ルート・/calibration・未知のサブパスはすべてキャリブレーション(部屋の既定画面) */}
-        <Route>
-          <CalibrationScreen
-            color={penlightColor}
-            onColorChange={setPenlightColor}
-            onReady={() => navigate("/controller")}
-          />
-        </Route>
-      </Switch>
+      <LiveClockProvider connection={room.connection}>
+        <Switch>
+          <Route path="/controller">
+            <ControllerScreen color={penlightColor} onColorChange={setPenlightColor} />
+          </Route>
+          {/* /room/:code ルート・/calibration・未知のサブパスはすべてキャリブレーション(部屋の既定画面) */}
+          <Route>
+            <CalibrationScreen
+              color={penlightColor}
+              onColorChange={setPenlightColor}
+              onReady={() => navigate("/controller")}
+            />
+          </Route>
+        </Switch>
+      </LiveClockProvider>
     </ServerTimeProvider>
   );
 }
