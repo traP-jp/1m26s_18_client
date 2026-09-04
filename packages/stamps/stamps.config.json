@@ -1,0 +1,13 @@
+{
+  "baseUrl": "https://q.trap.jp/api/v3",
+  "stamps": [
+    "thumbsup",
+    "clap",
+    "heart",
+    "tada",
+    "fire",
+    "sparkles",
+    "miku_ehehe",
+    "balloon"
+  ]
+}
