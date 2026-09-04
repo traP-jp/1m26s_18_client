@@ -46,6 +46,7 @@ export function DevPreviewScreen() {
             color={penlightColor}
             onColorChange={setPenlightColor}
             beats={PREVIEW_BEATS}
+            connection={null}
           />
         )}
       </div>
