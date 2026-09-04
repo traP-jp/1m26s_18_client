@@ -11,7 +11,8 @@ import { useServerTime } from "protocol";
 import type { RoomConnection } from "protocol";
 import { SongPlayer } from "../components/SongPlayer";
 import type { PlaybackAnchor, SongPlayerHandle } from "../components/SongPlayer";
-import { stampImages } from "../stamps";
+import { STAMPS, isBalloonStamp, stampById } from "stamps";
+import type { Stamp } from "stamps";
 import type { SongData } from "../api/songs";
 import {
   mockSong,
@@ -159,23 +160,39 @@ export function LiveScreen({ song, bpm, songUrl, connection, participantCount = 
     URL.revokeObjectURL(url);
   };
 
+  // 風船スタンプは浮遊、それ以外はポップのアニメーションで流す
+  const pushReaction = useCallback((stamp: Stamp) => {
+    const kind: ReactionItem["kind"] = isBalloonStamp(stamp) ? "balloon" : "stamp";
+    reactionSeq += 1;
+    setReactions((prev) => [
+      ...prev,
+      { id: `r${reactionSeq}`, kind, imageSrc: stamp.src, leftPct: 10 + Math.random() * 80 },
+    ]);
+  }, []);
+
+  // 参加者が送ったスタンプ(サーバーが ParticipantStamp として中継)を流す。
+  // stamp id はサーバーでは解釈されず、`stamps` パッケージの添字がそのまま id
   useEffect(() => {
-    if (stampImages.length === 0) return;
+    if (!connection) return;
+    return connection.subscribeServerMessage((message) => {
+      if (message.type !== "participantStamp") return;
+      const stamp = stampById(message.stampId);
+      if (!stamp) {
+        console.warn("ignoring unknown stamp id", message.stampId);
+        return;
+      }
+      pushReaction(stamp);
+    });
+  }, [connection, pushReaction]);
+
+  // 部屋なしプレビュー時はランダムなリアクションを流して見た目を確認できるようにする
+  useEffect(() => {
+    if (connection || STAMPS.length === 0) return;
     const timer = window.setInterval(() => {
-      const kind: ReactionItem["kind"] = Math.random() > 0.5 ? "stamp" : "balloon";
-      reactionSeq += 1;
-      setReactions((prev) => [
-        ...prev,
-        {
-          id: `r${reactionSeq}`,
-          kind,
-          imageSrc: stampImages[Math.floor(Math.random() * stampImages.length)],
-          leftPct: 10 + Math.random() * 80,
-        },
-      ]);
+      pushReaction(STAMPS[Math.floor(Math.random() * STAMPS.length)]);
     }, 1800);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [connection, pushReaction]);
 
   const removeReaction = (id: string) => {
     setReactions((prev) => prev.filter((item) => item.id !== id));

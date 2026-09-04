@@ -10,3 +10,5 @@ req.md
 issues.md
 motion.md
 apps/viewer/stagemodel-src
+# traQ 認証情報 (scripts/stamps.mjs)
+.env

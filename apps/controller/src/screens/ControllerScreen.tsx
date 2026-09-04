@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Button, ColorPicker, PENLIGHT_PALETTE } from "ui";
+import { Button, ColorPicker, PENLIGHT_PALETTE, StampPalette } from "ui";
+import { STAMPS } from "stamps";
+import type { RoomConnection } from "protocol";
 import { GlowPanel } from "../components/GlowPanel";
 import { VoiceMeter } from "../components/VoiceMeter";
 import {
@@ -21,6 +23,8 @@ export interface ControllerScreenProps {
   onColorChange: (color: string) => void;
   /** 楽曲のビート列。中央値昇順ソート済み。取得完了後のみこの画面を開く */
   beats: readonly Beat[];
+  /** 部屋への参加接続。null の間はスタンプを送れない */
+  connection: RoomConnection | null;
 }
 
 const JUDGEMENT_LABEL: Record<BeatJudgement, string> = {
@@ -32,12 +36,15 @@ const JUDGEMENT_LABEL: Record<BeatJudgement, string> = {
 /** この倍数のコンボに到達したら特別な振動パターンを鳴らす */
 const COMBO_MILESTONE = 10;
 
+/** スタンプ連打の最小間隔。ホストへの中継を過負荷にしないための保険 */
+const STAMP_COOLDOWN_MS = 200;
+
 interface JudgementToast {
   id: number;
   judgement: BeatJudgement;
 }
 
-export function ControllerScreen({ color, onColorChange, beats }: ControllerScreenProps) {
+export function ControllerScreen({ color, onColorChange, beats, connection }: ControllerScreenProps) {
   const [toast, setToast] = useState<string | null>(null);
   const [combo, setCombo] = useState(0);
   // useShake のコールバック内で最新のコンボ数を同期的に参照するためのミラー
@@ -90,6 +97,23 @@ export function ControllerScreen({ color, onColorChange, beats }: ControllerScre
     window.setTimeout(() => setToast(null), 1200);
   };
 
+  // 直近にスタンプを送った時刻(連打の間引き用)
+  const lastStampSentAt = useRef(0);
+  const sendStamp = (stampId: number) => {
+    if (!connection) {
+      showToast("接続中です…");
+      return;
+    }
+    const now = performance.now();
+    if (now - lastStampSentAt.current < STAMP_COOLDOWN_MS) return;
+    lastStampSentAt.current = now;
+    // Stamp は fire-and-forget(サーバーは応答せずストリームを閉じる)
+    void connection.request({ type: "stamp", stampId }).catch((error: unknown) => {
+      console.warn("failed to send stamp", error);
+      showToast("スタンプを送れませんでした");
+    });
+  };
+
   return (
     <div className="controller-live">
       <header className="controller-live__header">
@@ -127,13 +151,15 @@ export function ControllerScreen({ color, onColorChange, beats }: ControllerScre
 
       <ColorPicker colors={PENLIGHT_PALETTE} selected={color} onSelect={onColorChange} />
 
+      {STAMPS.length > 0 ? (
+        <StampPalette stamps={STAMPS} onSelect={sendStamp} disabled={!connection} />
+      ) : (
+        <p className="controller-live__stamps-empty">
+          スタンプ未取得(`npm run stamps:fetch` を実行してください)
+        </p>
+      )}
+
       <div className="controller-live__actions">
-        <Button variant="secondary" onClick={() => showToast("スタンプを送信しました(仮)")}>
-          スタンプ
-        </Button>
-        <Button variant="secondary" onClick={() => showToast("風船を送信しました(仮)")}>
-          風船
-        </Button>
         <VoiceMeter />
       </div>
 

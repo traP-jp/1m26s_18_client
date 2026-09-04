@@ -106,6 +106,7 @@ function RoomLayout() {
                 color={penlightColor}
                 onColorChange={setPenlightColor}
                 beats={song.beats}
+                connection={room.connection}
               />
             ) : (
               <Redirect to="/" replace />
