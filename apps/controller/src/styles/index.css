@@ -20,15 +20,28 @@ body,
 
 /* Calibration screen */
 .controller-calibration {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-5);
   flex: 1;
 }
-.controller-calibration__header {
+.controller-calibration__content {
+  position: relative;
+  z-index: 1;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-4);
+  flex: 1;
+}
+.controller-calibration__header {
+  text-align: center;
+  padding-top: var(--space-2);
+}
+.controller-calibration__header .stage-title {
+  font-size: clamp(1.6rem, 8vw, 2.2rem);
 }
 .controller-calibration__panel {
   display: flex;
@@ -49,10 +62,8 @@ body,
 }
 .controller-calibration__footer {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: var(--space-3);
-  margin-top: auto;
-  padding-top: var(--space-4);
 }
 
 /* Join screen */
@@ -180,6 +191,15 @@ body,
   padding: var(--space-4);
   flex: 1;
   position: relative;
+  overflow: hidden;
+}
+.controller-live__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  flex: 1;
 }
 .controller-live__header {
   display: flex;
@@ -206,21 +226,16 @@ body,
   color: var(--color-text-secondary);
 }
 
-.controller-glow-panel {
+.controller-penlight3d {
   flex: 1;
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: var(--space-4);
-  transition: box-shadow 0.15s ease;
-  user-select: none;
+  min-height: 220px;
   touch-action: none;
+  user-select: none;
 }
-.controller-glow-panel__hint {
-  font-size: 0.75rem;
-  color: rgba(0, 0, 0, 0.55);
-  text-align: center;
+.controller-penlight3d canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .controller-live__actions {
@@ -368,4 +383,17 @@ body,
 .controller-combo--hot {
   color: var(--color-accent-strong);
   text-shadow: 0 0 10px var(--color-accent);
+}
+
+/* Dev preview (/preview): バックエンド接続無しでの画面確認用 */
+.controller-dev-preview {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.controller-dev-preview__toolbar {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-bottom: 1px dashed var(--color-border);
 }

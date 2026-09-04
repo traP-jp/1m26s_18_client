@@ -4,11 +4,7 @@ import { useServerTime } from "protocol";
 import { ShakeTestArea } from "../components/ShakeTestArea";
 import { armAudioUnlock, requestMotionPermission, useMotionStatus, type MotionStatus } from "../motion/useMotion";
 import { refreshWakeLock, requestWakeLockPermission, useWakeLock, type WakeLockSnapshot } from "../wakeLock/useWakeLock";
-import {
-  mockInitialPermissions,
-  type PermissionStatus,
-} from "../mockData";
-
+import { mockInitialPermissions, type PermissionStatus } from "../mockData";
 export interface CalibrationScreenProps {
   color: string;
   onColorChange: (color: string) => void;
@@ -137,6 +133,18 @@ export function CalibrationScreen({ color, onColorChange, onReady, canProceed }:
 
   return (
     <div className="controller-calibration">
+      <div className="stage-ambience" aria-hidden="true">
+        <div className="stage-ambience__glow stage-ambience__glow--warm" />
+        <div className="stage-ambience__glow stage-ambience__glow--cool" />
+        <div className="stage-ambience__beams" />
+      </div>
+
+      <div className="controller-calibration__content">
+        <header className="controller-calibration__header">
+          <p className="stage-eyebrow">ペンライトを振ってみよう！</p>
+          <h1 className="stage-title">CALIBRATION</h1>
+        </header>
+
       <Panel className="controller-calibration__panel">
         <h2 className="controller-panel-title">許可ステータス</h2>
         <div className="controller-permission-row">
@@ -234,6 +242,24 @@ export function CalibrationScreen({ color, onColorChange, onReady, canProceed }:
           </p>
         </Panel>
       )}
+
+        <div className="stage-footer-spacer" aria-hidden="true" />
+      </div>
+
+      <div className="stage-ticket">
+        <div className="controller-calibration__footer">
+          <IconToggleButton
+            active={ready}
+            onToggle={() => setReady((r) => !r)}
+            activeLabel="準備完了しました"
+            inactiveLabel="準備完了"
+            icon="✓"
+          />
+        </div>
+        <Button onClick={handleReady} disabled={!ready}>
+          ライブへ進む
+        </Button>
+      </div>
     </div>
   );
 }

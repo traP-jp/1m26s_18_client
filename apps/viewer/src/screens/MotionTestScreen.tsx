@@ -14,7 +14,7 @@ export function MotionTestScreen() {
   return (
     <div className="viewer-motion-test">
       <Panel className="viewer-motion-test__card">
-        <p className="viewer-eyebrow">開発用</p>
+        <p className="stage-eyebrow">開発用</p>
         <h1 className="viewer-title">モーション単体テスト</h1>
         {/* <p className="viewer-subtitle">
           曲データを使わず、モーション1本とBPMの組み合わせだけを試せます。

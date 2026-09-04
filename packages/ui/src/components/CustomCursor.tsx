@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 
-// マウスカーソルを持つ端末(hover:hover)でのみ、丸いリングが遅れて追従し、
-// クリック中は縮む、を描画する。タッチ端末ではCSS側で非表示になり、
-// 通常のタップ操作に影響しない。
+// マウスカーソルを持つ端末でのみ、丸いリングが遅れて追従
+// クリック中は縮む
+// タッチ端末ではCSS側で非表示
 export function CustomCursor() {
   const ringRef = useRef<HTMLDivElement>(null);
   const dotRef = useRef<HTMLDivElement>(null);
