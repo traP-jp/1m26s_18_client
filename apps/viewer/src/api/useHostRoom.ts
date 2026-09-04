@@ -57,17 +57,27 @@ export function useHostRoom(room: RoomInfo | null): HostRoomState {
       return;
     }
     return connection.subscribeServerMessage((message) => {
-      if (message.type !== "participantJoined") {
+      if (message.type === "participantJoined") {
+        setParticipantIds((prev) => {
+          if (prev.has(message.participantId)) {
+            return prev;
+          }
+          const next = new Set(prev);
+          next.add(message.participantId);
+          return next;
+        });
         return;
       }
-      setParticipantIds((prev) => {
-        if (prev.has(message.participantId)) {
-          return prev;
-        }
-        const next = new Set(prev);
-        next.add(message.participantId);
-        return next;
-      });
+      if (message.type === "participantLeft") {
+        setParticipantIds((prev) => {
+          if (!prev.has(message.participantId)) {
+            return prev;
+          }
+          const next = new Set(prev);
+          next.delete(message.participantId);
+          return next;
+        });
+      }
     });
   }, [connection]);
 
