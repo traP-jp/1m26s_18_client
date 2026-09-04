@@ -4,20 +4,23 @@ import { Penlight3D } from "../components/Penlight3D";
 import { VoiceMeter } from "../components/VoiceMeter";
 import {
   armAudioUnlock,
-  judgeBeatTiming,
+  judgeBeatByElapsed,
   playFeedback,
   requestMotionPermission,
   SHAKE_THRESHOLD_PCT,
-  useBeatClock,
   useMotionStatus,
   useShake,
   type BeatJudgement,
 } from "../motion/useMotion";
-import { mockBpm } from "../mockData";
+import { useLiveBeatPulse } from "../live/useLiveBeatPulse";
+import { useLiveClock } from "../live/useLiveClock";
+import type { Beat } from "../api/rooms";
 
 export interface ControllerScreenProps {
   color: string;
   onColorChange: (color: string) => void;
+  /** 楽曲のビート列。中央値昇順ソート済み。取得完了後のみこの画面を開く */
+  beats: readonly Beat[];
 }
 
 const JUDGEMENT_LABEL: Record<BeatJudgement, string> = {
@@ -34,7 +37,7 @@ interface JudgementToast {
   judgement: BeatJudgement;
 }
 
-export function ControllerScreen({ color, onColorChange }: ControllerScreenProps) {
+export function ControllerScreen({ color, onColorChange, beats }: ControllerScreenProps) {
   const [toast, setToast] = useState<string | null>(null);
   const [combo, setCombo] = useState(0);
   // useShake のコールバック内で最新のコンボ数を同期的に参照するためのミラー
@@ -42,17 +45,29 @@ export function ControllerScreen({ color, onColorChange }: ControllerScreenProps
   const [judgement, setJudgement] = useState<JudgementToast | null>(null);
   const judgementTimer = useRef<number | null>(null);
   const motion = useMotionStatus();
-  // TODO: WebSocket 実装後は mockBpm ではなく楽曲の BPM と、サーバー基準の再生位置から作った時計を使う
-  const { clock, pulse } = useBeatClock(mockBpm);
+  const { getElapsedMs } = useLiveClock();
+  const pulse = useLiveBeatPulse(beats);
 
   // iOS(振動非対応)の音フィードバック用に、最初のタップで AudioContext を解錠する
   useEffect(armAudioUnlock, []);
 
+  useEffect(
+    () => () => {
+      if (judgementTimer.current) window.clearTimeout(judgementTimer.current);
+    },
+    [],
+  );
+
   useShake((shake) => {
     if (shake.intensity < SHAKE_THRESHOLD_PCT) return;
 
+    // 正確な再生位置(ライブ開始からの経過時間)に最も近いビートで判定する。
+    // 未開始・時刻未同期の間はコンボを維持して無視する
+    const elapsedMs = getElapsedMs(shake.onsetTimestamp);
+    if (elapsedMs === null) return;
+
     // 振り始め(しきい値を超えた瞬間)がビートにどれだけ近いかで判定
-    const timing = judgeBeatTiming(shake.onsetTimestamp, clock);
+    const timing = judgeBeatByElapsed(elapsedMs, beats);
 
     if (timing.judgement === "miss") {
       comboRef.current = 0;
@@ -68,8 +83,6 @@ export function ControllerScreen({ color, onColorChange }: ControllerScreenProps
     setJudgement({ id: shake.timestamp, judgement: timing.judgement });
     if (judgementTimer.current) window.clearTimeout(judgementTimer.current);
     judgementTimer.current = window.setTimeout(() => setJudgement(null), 500);
-
-    // TODO: WebSocket 実装後、ここで { type: "shake", intensity, judgement, offsetMs } をサーバーへ送信する
   });
 
   const showToast = (message: string) => {

@@ -29,12 +29,20 @@ export interface TimedResponse {
   receivedAtMs: number;
 }
 
+/**
+ * Heartbeat の送信間隔 (ms)。
+ * サーバーは約5秒毎の送信を推奨し、10秒無通信で切断するため、
+ * 余裕を持った既定値として5秒にする。
+ */
+export const HEARTBEAT_INTERVAL_MS = 5000;
+
 export class RoomConnection {
   readonly #transport: WebTransport;
   readonly #datagramWriter: WritableStreamDefaultWriter<Uint8Array>;
+  readonly #serverMessageListeners = new Set<(message: ServerMessage) => void>();
   #open = true;
+  #heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
-  onServerMessage: ((message: ServerMessage) => void) | null = null;
   onClose: (() => void) | null = null;
 
   private constructor(
@@ -56,6 +64,7 @@ export class RoomConnection {
     const datagramWriter = transport.datagrams.writable.getWriter();
     const connection = new RoomConnection(transport, datagramWriter);
     connection.#startReceiving();
+    connection.#startHeartbeat();
     return connection;
   }
 
@@ -106,14 +115,50 @@ export class RoomConnection {
     await this.#datagramWriter.write(encodeClientMessage(message));
   }
 
+  /**
+   * サーバーからのプッシュメッセージを購読する。複数登録可能。
+   * 戻り値の関数を呼ぶと購読を解除できる。
+   */
+  subscribeServerMessage(listener: (message: ServerMessage) => void): () => void {
+    this.#serverMessageListeners.add(listener);
+    return () => {
+      this.#serverMessageListeners.delete(listener);
+    };
+  }
+
   close(): void {
     if (!this.#open) {
       return;
     }
     this.#open = false;
+    this.#stopHeartbeat();
     this.#datagramWriter.close().catch(() => undefined);
     this.#transport.close({ closeCode: 0, reason: "" });
     this.onClose?.();
+  }
+
+  #startHeartbeat(): void {
+    if (this.#heartbeatTimer !== null) {
+      return;
+    }
+    const send = (): void => {
+      if (!this.#open) {
+        return;
+      }
+      // Heartbeat は fire-and-forget (サーバーは空応答でストリームを閉じる
+      // ため request() は null を返す)。切断直後の失敗は無視する。
+      void this.request({ type: "heartbeat" }).catch(() => undefined);
+    };
+    // タイムアウト(10秒)に対して余裕を持つよう、初回は即時送信する。
+    send();
+    this.#heartbeatTimer = setInterval(send, HEARTBEAT_INTERVAL_MS);
+  }
+
+  #stopHeartbeat(): void {
+    if (this.#heartbeatTimer !== null) {
+      clearInterval(this.#heartbeatTimer);
+      this.#heartbeatTimer = null;
+    }
   }
 
   #startReceiving(): void {
@@ -151,7 +196,7 @@ export class RoomConnection {
       if (chunks.length === 0) {
         return;
       }
-      this.onServerMessage?.(decodeServerMessage(concatChunks(chunks)));
+      this.#emitServerMessage(decodeServerMessage(concatChunks(chunks)));
     } catch (error) {
       console.warn("ignoring undecodable server stream", error);
     } finally {
@@ -169,7 +214,7 @@ export class RoomConnection {
         }
         if (value) {
           try {
-            this.onServerMessage?.(decodeServerMessage(toUint8Array(value)));
+            this.#emitServerMessage(decodeServerMessage(toUint8Array(value)));
           } catch (error) {
             console.warn("ignoring undecodable datagram", error);
           }
@@ -182,11 +227,22 @@ export class RoomConnection {
     }
   }
 
+  #emitServerMessage(message: ServerMessage): void {
+    for (const listener of [...this.#serverMessageListeners]) {
+      try {
+        listener(message);
+      } catch (error) {
+        console.warn("ignoring server message listener error", error);
+      }
+    }
+  }
+
   #handleClose(): void {
     if (!this.#open) {
       return;
     }
     this.#open = false;
+    this.#stopHeartbeat();
     this.onClose?.();
   }
 }

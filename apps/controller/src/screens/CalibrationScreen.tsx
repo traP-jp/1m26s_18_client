@@ -5,11 +5,12 @@ import { ShakeTestArea } from "../components/ShakeTestArea";
 import { armAudioUnlock, requestMotionPermission, useMotionStatus, type MotionStatus } from "../motion/useMotion";
 import { refreshWakeLock, requestWakeLockPermission, useWakeLock, type WakeLockSnapshot } from "../wakeLock/useWakeLock";
 import { mockInitialPermissions, type PermissionStatus } from "../mockData";
-
 export interface CalibrationScreenProps {
   color: string;
   onColorChange: (color: string) => void;
   onReady: () => void;
+  /** 楽曲のビート列を取得済みか。未取得の間は「ライブへ進む」を押せない */
+  canProceed: boolean;
 }
 
 /** unix µs を「日時.ミリ秒」表示にする(デバッグ用) */
@@ -96,7 +97,7 @@ function describeWakeLock(w: WakeLockSnapshot): WakeLockView {
   }
 }
 
-export function CalibrationScreen({ color, onColorChange, onReady }: CalibrationScreenProps) {
+export function CalibrationScreen({ color, onColorChange, onReady, canProceed }: CalibrationScreenProps) {
   const [permissions, setPermissions] = useState(mockInitialPermissions);
   const [ready, setReady] = useState(false);
   const motion = useMotionStatus();
@@ -209,6 +210,19 @@ export function CalibrationScreen({ color, onColorChange, onReady }: Calibration
         <h2 className="controller-panel-title">試し振りテスト</h2>
         <ShakeTestArea />
       </Panel>
+
+      <div className="controller-calibration__footer">
+        <IconToggleButton
+          active={ready}
+          onToggle={() => setReady((r) => !r)}
+          activeLabel="準備完了しました"
+          inactiveLabel="準備完了"
+          icon="✓"
+        />
+        <Button onClick={handleReady} disabled={!ready || !canProceed}>
+          ライブへ進む
+        </Button>
+      </div>
 
       {import.meta.env.DEV && (
         <Panel className="controller-calibration__panel">

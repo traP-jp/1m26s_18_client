@@ -810,10 +810,12 @@ body,
   border-radius: 50%;
   background: radial-gradient(ellipse at center, rgba(0, 229, 255, 0.35), transparent 70%);
   filter: blur(2px);
+  pointer-events: none;
 }
 .viewer-miku__canvas {
   position: absolute;
   inset: 0;
+  pointer-events: none;
   filter: drop-shadow(0 0 18px rgba(57, 197, 187, 0.35));
   /* cheap compositor-only floor reflection (no extra WebGL render pass) */
   -webkit-box-reflect: below 2px
@@ -876,6 +878,10 @@ body,
   /* トラス・スポットライトをヘッダーの高さまで上げても隠れないよう、背景の
      暗幕を薄くしている(以前は0.75で3D側がほぼ見えなくなっていた)。文字・
      ボタン自体はopacityを下げず読みやすさを保つ。 */
+  /* ヘッダーの透明な余白部分で下層の「ライブ開始」ボタンのクリックを塞がない
+     よう、コンテナ自体はヒットテストから外し、中のボタン等だけ戻す。
+     (表示位置・見た目は変えない) */
+  pointer-events: none;
   position: absolute;
   top: 22px;
   left: 0;
@@ -886,6 +892,10 @@ body,
   flex-direction: column;
   gap: var(--space-3);
   background: linear-gradient(to bottom, rgba(5, 5, 9, 0.32), transparent);
+}
+.viewer-live__header button,
+.viewer-live__header a {
+  pointer-events: auto;
 }
 .viewer-live__header-top {
   display: flex;

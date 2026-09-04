@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Gauge, ParticipantCounter, PenlightGrid, ProgressBar, ReactionOverlay } from "ui";
+import { Button, ParticipantCounter, PenlightGrid, ProgressBar, ReactionOverlay } from "ui";
 import type { PenlightWaveMode, ReactionItem } from "ui";
 import { StagePlaceholder } from "../components/StagePlaceholder";
 import { BackScreen } from "../components/BackScreen";
@@ -17,8 +17,6 @@ import {
   mockSong,
   mockChorusSections,
   mockPlaybackProgressPct,
-  mockHeatLevel,
-  mockParticipantCount,
   mockPenlights,
   mockLyricLine,
 } from "../mockData";
@@ -38,6 +36,7 @@ export interface LiveScreenProps {
   songUrl?: string;
   /** ホストのWebTransport接続。nullのときはプレビュー動作(LiveStart不送信) */
   connection?: RoomConnection | null;
+  participantCount?: number;
 }
 
 type LiveStartStatus = "idle" | "sending" | "sent" | "error";
@@ -55,7 +54,7 @@ const POSE_STATUS_LABELS: Record<PoseTrackerStatus, string> = {
   error: "エラー",
 };
 
-export function LiveScreen({ onSongEnd, song, bpm, songUrl, connection }: LiveScreenProps) {
+export function LiveScreen({ song, bpm, songUrl, connection, participantCount = 0 }: LiveScreenProps) {
   const [reactions, setReactions] = useState<ReactionItem[]>([]);
   const [waveMode, setWaveMode] = useState<PenlightWaveMode>("idle");
   const [songReady, setSongReady] = useState(!songUrl);
@@ -122,7 +121,6 @@ export function LiveScreen({ onSongEnd, song, bpm, songUrl, connection }: LiveSc
             throw new Error(response.message);
           }
           // 応答なし(null)やliveStarted等は送信成功扱い。
-          // liveStartedブロードキャストは別ストリーム(onServerMessage)で届く想定。
           setLiveStartTimeUs(startTime);
           setLiveStartStatus("sent");
         })
@@ -229,8 +227,8 @@ export function LiveScreen({ onSongEnd, song, bpm, songUrl, connection }: LiveSc
             </div>
 
             <div className="viewer-live__header-stats">
-                            <ProgressBar segments={mockChorusSections} progressPct={mockPlaybackProgressPct} />
-              <ParticipantCounter count={mockParticipantCount} label="参加人数" />
+              <ProgressBar segments={mockChorusSections} progressPct={mockPlaybackProgressPct} />
+              <ParticipantCounter count={participantCount} label="参加人数" />
             </div>
           </div>
 

@@ -7,6 +7,8 @@ import { ControllerScreen } from "./screens/ControllerScreen";
 import { JoinScreen } from "./screens/JoinScreen";
 import { DevPreviewScreen } from "./screens/DevPreviewScreen";
 import { useParticipantRoom } from "./api/useParticipantRoom";
+import { useRoomSong } from "./live/useRoomSong";
+import { LiveClockProvider } from "./live/useLiveClock";
 import { useWakeLock } from "./wakeLock/useWakeLock";
 
 const ROOM_ROUTE = "/room/:code";
@@ -23,6 +25,7 @@ function RoomLayout() {
   const roomCode = code !== undefined && ROOM_CODE_PATTERN.test(code) ? code : null;
   const [penlightColor, setPenlightColor] = useState("#00e5ff");
   const room = useParticipantRoom(roomCode);
+  const song = useRoomSong(roomCode);
 
   const connection = room.connection;
   // onClose 内で「今アクティブな接続」かどうかを判定するためのミラー
@@ -70,21 +73,56 @@ function RoomLayout() {
     );
   }
 
+  if (song.status === "error") {
+    return (
+      <div className="controller-join">
+        <Panel className="controller-join__panel" glow>
+          <p className="controller-join__eyebrow">ペンライトコントローラー</p>
+          <h1 className="controller-join__title">楽曲情報を取得できませんでした</h1>
+          <p className="controller-join__hint">
+            ルームコード: {roomCode}
+            <br />
+            {song.errorMessage ?? "楽曲情報の取得に失敗しました"}
+          </p>
+          <div className="controller-join__form">
+            <Button type="button" onClick={song.retry}>
+              再試行
+            </Button>
+            <Button type="button" onClick={() => navigate("~/")}>
+              コード入力に戻る
+            </Button>
+          </div>
+        </Panel>
+      </div>
+    );
+  }
+
   return (
     <ServerTimeProvider connection={room.connection}>
-      <Switch>
-        <Route path="/controller">
-          <ControllerScreen color={penlightColor} onColorChange={setPenlightColor} />
-        </Route>
-        {/* /room/:code ルート・/calibration・未知のサブパスはすべてキャリブレーション(部屋の既定画面) */}
-        <Route>
-          <CalibrationScreen
-            color={penlightColor}
-            onColorChange={setPenlightColor}
-            onReady={() => navigate("/controller")}
-          />
-        </Route>
-      </Switch>
+      <LiveClockProvider connection={room.connection}>
+        <Switch>
+          <Route path="/controller">
+            {song.status === "ready" ? (
+              <ControllerScreen
+                color={penlightColor}
+                onColorChange={setPenlightColor}
+                beats={song.beats}
+              />
+            ) : (
+              <Redirect to="/" replace />
+            )}
+          </Route>
+          {/* /room/:code ルート・/calibration・未知のサブパスはすべてキャリブレーション(部屋の既定画面) */}
+          <Route>
+            <CalibrationScreen
+              color={penlightColor}
+              onColorChange={setPenlightColor}
+              onReady={() => navigate("/controller")}
+              canProceed={song.status === "ready"}
+            />
+          </Route>
+        </Switch>
+      </LiveClockProvider>
     </ServerTimeProvider>
   );
 }
