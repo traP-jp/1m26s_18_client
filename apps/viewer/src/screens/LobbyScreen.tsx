@@ -4,7 +4,7 @@ import { useServerTime } from "protocol";
 import type { SongData } from "../api/songs";
 import type { RoomInfo } from "../api/rooms";
 import type { HostRoomState } from "../api/useHostRoom";
-import { mockSong, mockParticipantCount, mockRoomCode } from "../mockData";
+import { mockSong, mockRoomCode } from "../mockData";
 import { buildControllerJoinUrl } from "../api/config";
 
 export interface LobbyScreenProps {
@@ -60,7 +60,7 @@ export function LobbyScreen({ onNext, song, room, hostRoom }: LobbyScreenProps) 
                 <span className="viewer-song-card__artist">{artist}</span>
               </div>
             </div>
-            <ParticipantCounter count={mockParticipantCount} label="参加人数" />
+            <ParticipantCounter count={hostRoom?.participantCount ?? 0} label="参加人数" />
           </div>
         </header>
 

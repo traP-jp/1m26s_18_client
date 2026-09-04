@@ -15,7 +15,6 @@ export const mockChorusSections: ProgressSegment[] = [
 
 export const mockPlaybackProgressPct = 34;
 
-export const mockParticipantCount = 248;
 export const mockReadyRatio = 62; // %
 export const mockHeatLevel = 71; // %
 export const mockRoomCode = "1234";
