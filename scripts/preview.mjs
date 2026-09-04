@@ -6,8 +6,8 @@ const APPS = {
     port: 5173,
     screens: {
       "url-input": "/",
-      lobby: "/lobby",
-      live: "/live",
+      lobby: "/room/0000/lobby",
+      live: "/room/0000/live",
       "motion-test": "/motion-test",
     },
   },

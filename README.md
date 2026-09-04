@@ -32,7 +32,7 @@ npm run dev:controller # controller のみ
 
 毎回クリックで遷移しなくても、パスで直接その画面を開けます。
 
-- viewer: `/`(URL入力) / `/lobby` / `/live` / `/motion-test`
+- viewer: `/`(トップ) / `/select`(曲選択) / `/room/<コード>/lobby`(待機ロビー) / `/room/<コード>/live`(ライブ視聴) / `/motion-test`
 - controller: `/`(参加コード入力) / `/room/<4桁のコード>`(キャリブレーション。QR参加もここに着地) / `/room/<4桁のコード>/controller`
 
 ```
@@ -44,9 +44,9 @@ npm run preview -- controller calibration
 npm run preview -- controller controller
 ```
 
-(devサーバーが起動済みであることが前提です。手動でURLを開く場合は `http://localhost:5173/live` のように直接指定しても同じです。)
+(devサーバーが起動済みであることが前提です。手動でURLを開く場合は `http://localhost:5173/motion-test` のように直接指定しても同じです。)
 
-注: controller の calibration / controller は実際に作成した部屋のコードで開く必要があります。
+注: viewer の lobby / live は部屋作成後に発行される `/room/<コード>/...` で開く必要があります(直接開くと曲選択に戻ります)。controller の calibration / controller は実際に作成した部屋のコードで開く必要があります。
 
 ### モーション単体テスト(`motion-test`)
 
