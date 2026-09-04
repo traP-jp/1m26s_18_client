@@ -1,17 +1,12 @@
 /**
  * ビート同期判定。振りの開始時刻が「最も近いビート」からどれだけズレているかで判定する。
  *
- * BeatClock は「原点時刻 originMs から bpm で等間隔にビートが並んでいる」というモデルで、
- * 現状はコントローラー画面を開いた時刻を原点にしたローカル時計。
- * WebSocket 実装後は、サーバーから届く再生位置と楽曲の BPM から originMs を算出して差し替える想定。
- * 時刻は全て performance.now() ベース(ShakeEvent.timestamp と同じ基準)。
+ * ビートの基準時刻は `startsAtMs` と `endsAtMs` の中央値を使う。
+ * ビート列は API (`GET /rooms/{room_id}`) から取得した楽曲情報の `beats` を
+ * 取得時に中央値昇順へソートしたもの(`useRoomSong`)を使うこと。
+ * 時刻はライブ開始からの経過時間 (ms) で、`useLiveClock().getElapsedMs()` の
+ * 返す値と同じ基準で比較すること。
  */
-
-export interface BeatClock {
-  bpm: number;
-  /** ビートが乗る基準時刻 (performance.now() 基準, ms) */
-  originMs: number;
-}
 
 export type BeatJudgement = "perfect" | "good" | "miss";
 
@@ -19,7 +14,7 @@ export interface BeatTiming {
   judgement: BeatJudgement;
   /** 最も近いビートからのズレ (ms)。負なら早い、正なら遅い */
   offsetMs: number;
-  /** 最も近いビートの通し番号(原点を 0 とする) */
+  /** 最も近いビートの index (`beats` 配列上の位置) */
   beatIndex: number;
 }
 
@@ -28,15 +23,21 @@ export const PERFECT_WINDOW_MS = 90;
 /** この範囲内なら GOOD (ms)。これを超えると MISS */
 export const GOOD_WINDOW_MS = 170;
 
-export function beatIntervalMs(clock: BeatClock): number {
-  return 60_000 / clock.bpm;
+/** ビートの基準時刻。`startsAtMs` と `endsAtMs` の中央値 (ms) */
+export function beatCenterMs(beat: { startsAtMs: number; endsAtMs: number }): number {
+  return (beat.startsAtMs + beat.endsAtMs) / 2;
 }
 
-export function judgeBeatTiming(timestampMs: number, clock: BeatClock): BeatTiming {
-  const interval = beatIntervalMs(clock);
-  const elapsed = timestampMs - clock.originMs;
-  const beatIndex = Math.round(elapsed / interval);
-  const offsetMs = elapsed - beatIndex * interval;
+/**
+ * ライブ開始からの経過時刻に最も近いビートを探して判定する。
+ * `beats` は中央値昇順ソート済みであること。
+ */
+export function judgeBeatByElapsed(
+  elapsedMs: number,
+  beats: readonly { startsAtMs: number; endsAtMs: number }[],
+): BeatTiming {
+  const beatIndex = nearestBeatIndex(elapsedMs, beats);
+  const offsetMs = elapsedMs - beatCenterMs(beats[beatIndex]);
   const abs = Math.abs(offsetMs);
 
   const judgement: BeatJudgement =
@@ -44,10 +45,28 @@ export function judgeBeatTiming(timestampMs: number, clock: BeatClock): BeatTimi
   return { judgement, offsetMs, beatIndex };
 }
 
-/** now から次のビートまでの待ち時間 (ms)。ビート表示のタイマーを時計に同期させるために使う */
-export function msUntilNextBeat(nowMs: number, clock: BeatClock): number {
-  const interval = beatIntervalMs(clock);
-  const elapsed = nowMs - clock.originMs;
-  const phase = ((elapsed % interval) + interval) % interval;
-  return interval - phase;
+/** 中央値が `elapsedMs` に最も近いビートの index を二分探索で求める */
+function nearestBeatIndex(
+  elapsedMs: number,
+  beats: readonly { startsAtMs: number; endsAtMs: number }[],
+): number {
+  let lo = 0;
+  let hi = beats.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (beatCenterMs(beats[mid]) < elapsedMs) {
+      lo = mid + 1;
+    } else {
+      hi = mid;
+    }
+  }
+  // lo は elapsedMs 以上の最初のビート(または末尾)。前後で近い方を選ぶ
+  if (
+    lo > 0 &&
+    Math.abs(beatCenterMs(beats[lo - 1]) - elapsedMs) <=
+      Math.abs(beatCenterMs(beats[lo]) - elapsedMs)
+  ) {
+    return lo - 1;
+  }
+  return lo;
 }

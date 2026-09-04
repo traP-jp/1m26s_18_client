@@ -13,6 +13,8 @@ export interface CalibrationScreenProps {
   color: string;
   onColorChange: (color: string) => void;
   onReady: () => void;
+  /** 楽曲のビート列を取得済みか。未取得の間は「ライブへ進む」を押せない */
+  canProceed: boolean;
 }
 
 /** unix µs を「日時.ミリ秒」表示にする(デバッグ用) */
@@ -99,7 +101,7 @@ function describeWakeLock(w: WakeLockSnapshot): WakeLockView {
   }
 }
 
-export function CalibrationScreen({ color, onColorChange, onReady }: CalibrationScreenProps) {
+export function CalibrationScreen({ color, onColorChange, onReady, canProceed }: CalibrationScreenProps) {
   const [permissions, setPermissions] = useState(mockInitialPermissions);
   const [ready, setReady] = useState(false);
   const motion = useMotionStatus();
@@ -209,7 +211,7 @@ export function CalibrationScreen({ color, onColorChange, onReady }: Calibration
           inactiveLabel="準備完了"
           icon="✓"
         />
-        <Button onClick={handleReady} disabled={!ready}>
+        <Button onClick={handleReady} disabled={!ready || !canProceed}>
           ライブへ進む
         </Button>
       </div>
