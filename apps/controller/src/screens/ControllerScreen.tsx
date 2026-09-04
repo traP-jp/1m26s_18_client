@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button, ColorPicker, PENLIGHT_PALETTE, StampPalette } from "ui";
 import { STAMPS } from "stamps";
 import type { RoomConnection } from "protocol";
-import { GlowPanel } from "../components/GlowPanel";
+import { Penlight3D } from "../components/Penlight3D";
 import { VoiceMeter } from "../components/VoiceMeter";
 import {
   armAudioUnlock,
@@ -116,54 +116,63 @@ export function ControllerScreen({ color, onColorChange, beats, connection }: Co
 
   return (
     <div className="controller-live">
-      <header className="controller-live__header">
-        <div
-          className={`controller-beat-dot ${pulse ? "controller-beat-dot--pulse" : ""}`.trim()}
-        />
-        <span
-          className={`controller-combo ${combo >= COMBO_MILESTONE ? "controller-combo--hot" : ""}`.trim()}
-        >
-          COMBO {combo}
-        </span>
-        {/* キャリブレーションを経由せず直接開いた場合(iOS)向けの許可導線 */}
-        {(motion.status === "prompt" || motion.status === "requesting") && (
-          <Button
-            variant="ghost"
-            className="controller-live__motion-button"
-            disabled={motion.status === "requesting"}
-            onClick={() => void requestMotionPermission()}
-          >
-            {motion.status === "requesting" ? "確認中…" : "センサーを有効化"}
-          </Button>
-        )}
-      </header>
-
-      {judgement && (
-        <span
-          key={judgement.id}
-          className={`controller-judgement controller-judgement--${judgement.judgement}`}
-        >
-          {JUDGEMENT_LABEL[judgement.judgement]}
-        </span>
-      )}
-
-      <GlowPanel color={color} />
-
-      <ColorPicker colors={PENLIGHT_PALETTE} selected={color} onSelect={onColorChange} />
-
-      {STAMPS.length > 0 ? (
-        <StampPalette stamps={STAMPS} onSelect={sendStamp} disabled={!connection} />
-      ) : (
-        <p className="controller-live__stamps-empty">
-          スタンプ未取得(`npm run stamps:fetch` を実行してください)
-        </p>
-      )}
-
-      <div className="controller-live__actions">
-        <VoiceMeter />
+      {/* 本番中は毎フレーム描く演出(conic-gradientのビーム)を避け、静的なグロー
+          2枚だけに留めてバッテリー消費を抑える */}
+      <div className="stage-ambience" aria-hidden="true">
+        <div className="stage-ambience__glow stage-ambience__glow--warm" />
+        <div className="stage-ambience__glow stage-ambience__glow--cool" />
       </div>
 
-      {toast && <div className="controller-toast">{toast}</div>}
+      <div className="controller-live__content">
+        <header className="controller-live__header">
+          <div
+            className={`controller-beat-dot ${pulse ? "controller-beat-dot--pulse" : ""}`.trim()}
+          />
+          <span
+            className={`controller-combo ${combo >= COMBO_MILESTONE ? "controller-combo--hot" : ""}`.trim()}
+          >
+            COMBO {combo}
+          </span>
+          {/* キャリブレーションを経由せず直接開いた場合(iOS)向けの許可導線 */}
+          {(motion.status === "prompt" || motion.status === "requesting") && (
+            <Button
+              variant="ghost"
+              className="controller-live__motion-button"
+              disabled={motion.status === "requesting"}
+              onClick={() => void requestMotionPermission()}
+            >
+              {motion.status === "requesting" ? "確認中…" : "センサーを有効化"}
+            </Button>
+          )}
+        </header>
+
+        {judgement && (
+          <span
+            key={judgement.id}
+            className={`controller-judgement controller-judgement--${judgement.judgement}`}
+          >
+            {JUDGEMENT_LABEL[judgement.judgement]}
+          </span>
+        )}
+
+        <Penlight3D color={color} />
+
+        <ColorPicker colors={PENLIGHT_PALETTE} selected={color} onSelect={onColorChange} />
+
+        {STAMPS.length > 0 ? (
+          <StampPalette stamps={STAMPS} onSelect={sendStamp} disabled={!connection} />
+        ) : (
+          <p className="controller-live__stamps-empty">
+            スタンプ未取得(`npm run stamps:fetch` を実行してください)
+          </p>
+        )}
+
+        <div className="controller-live__actions">
+          <VoiceMeter />
+        </div>
+
+        {toast && <div className="controller-toast">{toast}</div>}
+      </div>
     </div>
   );
 }

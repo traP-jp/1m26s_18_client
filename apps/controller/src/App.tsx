@@ -5,6 +5,7 @@ import { ServerTimeProvider } from "protocol";
 import { CalibrationScreen } from "./screens/CalibrationScreen";
 import { ControllerScreen } from "./screens/ControllerScreen";
 import { JoinScreen } from "./screens/JoinScreen";
+import { DevPreviewScreen } from "./screens/DevPreviewScreen";
 import { useParticipantRoom } from "./api/useParticipantRoom";
 import { useRoomSong } from "./live/useRoomSong";
 import { LiveClockProvider } from "./live/useLiveClock";
@@ -142,6 +143,11 @@ function App() {
         </Route>
         <Route path={ROOM_ROUTE} nest>
           <RoomLayout />
+        </Route>
+        {/* バックエンド接続無しでキャリブレーション/コントローラー画面のデザインだけ
+            確認するための開発用ルート */}
+        <Route path="/preview">
+          <DevPreviewScreen />
         </Route>
         {/* 未知のパス(複数セグメント含む)は参加コード入力へ */}
         <Route>
