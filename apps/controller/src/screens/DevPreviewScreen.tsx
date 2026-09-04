@@ -4,8 +4,12 @@ import { Button } from "ui";
 import { ServerTimeProvider } from "protocol";
 import { CalibrationScreen } from "./CalibrationScreen";
 import { ControllerScreen } from "./ControllerScreen";
+import { LiveClockProvider } from "../live/useLiveClock";
+import type { Beat } from "../api/rooms";
 
 type PreviewTarget = "calibration" | "controller";
+
+const PREVIEW_BEATS: readonly Beat[] = [];
 
 export function DevPreviewScreen() {
   const [target, setTarget] = useState<PreviewTarget>("calibration");
@@ -13,6 +17,7 @@ export function DevPreviewScreen() {
 
   return (
     <ServerTimeProvider connection={null}>
+      <LiveClockProvider connection={null}>
       <div className="controller-dev-preview">
         <div className="controller-dev-preview__toolbar">
           <Button
@@ -34,11 +39,17 @@ export function DevPreviewScreen() {
             color={penlightColor}
             onColorChange={setPenlightColor}
             onReady={() => setTarget("controller")}
+            canProceed={true}
           />
         ) : (
-          <ControllerScreen color={penlightColor} onColorChange={setPenlightColor} />
+          <ControllerScreen
+            color={penlightColor}
+            onColorChange={setPenlightColor}
+            beats={PREVIEW_BEATS}
+          />
         )}
       </div>
+      </LiveClockProvider>
     </ServerTimeProvider>
   );
 }
