@@ -1,10 +1,7 @@
-export const CALIBRATION_SOUND_COUNT = 3;
-
 export const EventId = {
   Join: 0x01,
   TimeSyncRequest: 0x02,
-  CalibrationStart: 0x03,
-  CalibrationDetect: 0x04,
+  Heartbeat: 0x03,
   Ready: 0x05,
   Stamp: 0x06,
   LiveStart: 0x07,
@@ -19,13 +16,13 @@ export const EventId = {
   LiveStarted: 0x87,
   ParticipantColorChange: 0x88,
   SyncRate: 0x89,
+  ParticipantLeft: 0x8a,
 } as const;
 
 export type ClientMessage =
   | { type: "join" }
   | { type: "timeSyncRequest" }
-  | { type: "calibrationStart"; times: [number, number, number] }
-  | { type: "calibrationDetect"; soundIndex: number; detectedAt: number }
+  | { type: "heartbeat" }
   | { type: "ready" }
   | { type: "stamp"; stampId: number }
   | { type: "liveStart"; startTime: number }
@@ -37,6 +34,7 @@ export type ServerMessage =
   | { type: "timeSyncResponse"; t1: number; t2: number }
   | { type: "error"; message: string }
   | { type: "participantJoined"; participantId: string }
+  | { type: "participantLeft"; participantId: string }
   | { type: "participantReady"; participantId: string }
   | { type: "participantStamp"; participantId: string; stampId: number }
   | { type: "participantColorChange"; participantId: string; colorId: number }
@@ -184,16 +182,8 @@ export function encodeClientMessage(message: ClientMessage): Uint8Array {
     case "timeSyncRequest":
       writer.u8(EventId.TimeSyncRequest);
       break;
-    case "calibrationStart":
-      writer.u8(EventId.CalibrationStart);
-      for (const time of message.times) {
-        writer.u64(time);
-      }
-      break;
-    case "calibrationDetect":
-      writer.u8(EventId.CalibrationDetect);
-      writer.u8(message.soundIndex);
-      writer.u64(message.detectedAt);
+    case "heartbeat":
+      writer.u8(EventId.Heartbeat);
       break;
     case "ready":
       writer.u8(EventId.Ready);
@@ -237,6 +227,9 @@ export function decodeServerMessage(bytes: Uint8Array): ServerMessage {
     }
     case EventId.ParticipantJoined:
       message = { type: "participantJoined", participantId: reader.uuid() };
+      break;
+    case EventId.ParticipantLeft:
+      message = { type: "participantLeft", participantId: reader.uuid() };
       break;
     case EventId.ParticipantReady:
       message = { type: "participantReady", participantId: reader.uuid() };

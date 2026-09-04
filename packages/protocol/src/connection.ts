@@ -29,11 +29,19 @@ export interface TimedResponse {
   receivedAtMs: number;
 }
 
+/**
+ * Heartbeat の送信間隔 (ms)。
+ * サーバーは約5秒毎の送信を推奨し、10秒無通信で切断するため、
+ * 余裕を持った既定値として5秒にする。
+ */
+export const HEARTBEAT_INTERVAL_MS = 5000;
+
 export class RoomConnection {
   readonly #transport: WebTransport;
   readonly #datagramWriter: WritableStreamDefaultWriter<Uint8Array>;
   readonly #serverMessageListeners = new Set<(message: ServerMessage) => void>();
   #open = true;
+  #heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
   onClose: (() => void) | null = null;
 
@@ -56,6 +64,7 @@ export class RoomConnection {
     const datagramWriter = transport.datagrams.writable.getWriter();
     const connection = new RoomConnection(transport, datagramWriter);
     connection.#startReceiving();
+    connection.#startHeartbeat();
     return connection;
   }
 
@@ -122,9 +131,34 @@ export class RoomConnection {
       return;
     }
     this.#open = false;
+    this.#stopHeartbeat();
     this.#datagramWriter.close().catch(() => undefined);
     this.#transport.close({ closeCode: 0, reason: "" });
     this.onClose?.();
+  }
+
+  #startHeartbeat(): void {
+    if (this.#heartbeatTimer !== null) {
+      return;
+    }
+    const send = (): void => {
+      if (!this.#open) {
+        return;
+      }
+      // Heartbeat は fire-and-forget (サーバーは空応答でストリームを閉じる
+      // ため request() は null を返す)。切断直後の失敗は無視する。
+      void this.request({ type: "heartbeat" }).catch(() => undefined);
+    };
+    // タイムアウト(10秒)に対して余裕を持つよう、初回は即時送信する。
+    send();
+    this.#heartbeatTimer = setInterval(send, HEARTBEAT_INTERVAL_MS);
+  }
+
+  #stopHeartbeat(): void {
+    if (this.#heartbeatTimer !== null) {
+      clearInterval(this.#heartbeatTimer);
+      this.#heartbeatTimer = null;
+    }
   }
 
   #startReceiving(): void {
@@ -208,6 +242,7 @@ export class RoomConnection {
       return;
     }
     this.#open = false;
+    this.#stopHeartbeat();
     this.onClose?.();
   }
 }
