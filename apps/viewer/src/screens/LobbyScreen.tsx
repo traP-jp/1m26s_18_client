@@ -42,16 +42,16 @@ export function LobbyScreen({ onNext, song, room, hostRoom }: LobbyScreenProps) 
 
   return (
     <div className="viewer-lobby">
-      <div className="viewer-stage-ambience" aria-hidden="true">
-        <div className="viewer-stage-ambience__glow viewer-stage-ambience__glow--warm" />
-        <div className="viewer-stage-ambience__glow viewer-stage-ambience__glow--cool" />
-        <div className="viewer-stage-ambience__beams" />
+      <div className="stage-ambience" aria-hidden="true">
+        <div className="stage-ambience__glow stage-ambience__glow--warm" />
+        <div className="stage-ambience__glow stage-ambience__glow--cool" />
+        <div className="stage-ambience__beams" />
       </div>
 
       <div className="viewer-lobby__content">
         <header className="viewer-lobby__header">
-          <p className="viewer-eyebrow">ようこそ、今日は来てくれてありがとう。最後までみんなで楽しもう！</p>
-          <h1 className="viewer-stage-title">BACKSTAGE</h1>
+          <p className="stage-eyebrow">ようこそ、今日は来てくれてありがとう。最後までみんなで楽しもう！</p>
+          <h1 className="stage-title">BACKSTAGE</h1>
           <div className="viewer-lobby__header-row">
             <div className="viewer-song-card">
               <div className="viewer-song-card__thumb" aria-hidden="true" />
@@ -90,12 +90,12 @@ export function LobbyScreen({ onNext, song, room, hostRoom }: LobbyScreenProps) 
           </div>
         )}
 
-        <div className="viewer-stage-footer-spacer" aria-hidden="true" />
+        <div className="stage-footer-spacer" aria-hidden="true" />
       </div>
 
-      <div className="viewer-stage-ticket">
-        <div className="viewer-stage-ticket__info">
-          <span className={`viewer-stage-ticket__status${isConnecting ? " viewer-stage-ticket__status--muted" : ""}`}>
+      <div className="stage-ticket">
+        <div className="stage-ticket__info">
+          <span className={`stage-ticket__status${isConnecting ? " stage-ticket__status--muted" : ""}`}>
             {isConnecting ? "コントローラーの接続待ち…" : "準備完了"}
           </span>
         </div>

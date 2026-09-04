@@ -7,10 +7,10 @@ export interface TopScreenProps {
 export function TopScreen({ onStart }: TopScreenProps) {
   return (
     <div className="viewer-top">
-      <div className="viewer-stage-ambience" aria-hidden="true">
-        <div className="viewer-stage-ambience__glow viewer-stage-ambience__glow--warm" />
-        <div className="viewer-stage-ambience__glow viewer-stage-ambience__glow--cool" />
-        <div className="viewer-stage-ambience__beams" />
+      <div className="stage-ambience" aria-hidden="true">
+        <div className="stage-ambience__glow stage-ambience__glow--warm" />
+        <div className="stage-ambience__glow stage-ambience__glow--cool" />
+        <div className="stage-ambience__beams" />
       </div>
 
       <div className="viewer-top__content">

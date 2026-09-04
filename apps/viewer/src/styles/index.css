@@ -34,13 +34,6 @@ body,
   color: var(--color-text-secondary);
 }
 
-.viewer-eyebrow {
-  margin: 0;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  color: var(--color-accent);
-  text-transform: uppercase;
-}
 .viewer-title {
   margin: var(--space-2) 0;
   font-size: 1.8rem;
@@ -113,50 +106,6 @@ body,
   background: var(--color-bg-primary);
 }
 
-.viewer-stage-ambience {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.viewer-stage-ambience__glow {
-  position: absolute;
-  mix-blend-mode: screen;
-}
-.viewer-stage-ambience__glow--warm {
-  top: -20%;
-  left: 50%;
-  width: 140%;
-  height: 60%;
-  transform: translateX(-50%);
-  background: radial-gradient(ellipse 50% 50% at 50% 0%, rgba(255, 190, 110, 0.16), transparent 70%);
-}
-.viewer-stage-ambience__glow--cool {
-  bottom: -30%;
-  left: 50%;
-  width: 120%;
-  height: 60%;
-  transform: translateX(-50%);
-  background: radial-gradient(ellipse 50% 50% at 50% 100%, rgba(0, 200, 255, 0.1), transparent 70%);
-}
-.viewer-stage-ambience__beams {
-  position: absolute;
-  inset: 0;
-  opacity: 0.5;
-  background: repeating-conic-gradient(
-    from -10deg at 50% -20%,
-    rgba(255, 220, 160, 0.05) 0deg 4deg,
-    transparent 4deg 14deg
-  );
-}
-.viewer-stage-title {
-  margin: var(--space-2) 0;
-  font-size: clamp(2.2rem, 5vw, 3rem);
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  color: var(--color-text-primary);
-  text-shadow: var(--glow-md), 0 0 48px rgba(255, 190, 110, 0.3);
-}
 .viewer-url-input__content {
   position: relative;
   z-index: 1;
@@ -295,38 +244,6 @@ body,
   color: inherit;
   text-decoration: underline;
 }
-.viewer-stage-footer-spacer {
-  height: 96px;
-}
-
-/* 画面下部固定のチケット半券バー */
-.viewer-stage-ticket {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: var(--space-5);
-  padding: var(--space-4) var(--space-6);
-  background: rgba(19, 19, 32, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px dashed var(--color-border);
-}
-.viewer-stage-ticket__info {
-  flex: 1;
-  min-width: 0;
-}
-.viewer-stage-ticket__status {
-  font-size: 0.85rem;
-  color: var(--color-accent);
-}
-.viewer-stage-ticket__status--muted {
-  color: var(--color-text-muted);
-}
-
 /* Motion test screen (dev-only, /motion-test) */
 .viewer-motion-test {
   min-height: 100vh;

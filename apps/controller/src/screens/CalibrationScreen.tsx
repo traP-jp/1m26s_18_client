@@ -1,14 +1,10 @@
 import { useEffect, useState } from "react";
-import { Button, ColorPicker, IconToggleButton, ParticipantCounter, Panel, PENLIGHT_PALETTE } from "ui";
+import { Button, ColorPicker, IconToggleButton, Panel, PENLIGHT_PALETTE } from "ui";
 import { useServerTime } from "protocol";
 import { ShakeTestArea } from "../components/ShakeTestArea";
 import { armAudioUnlock, requestMotionPermission, useMotionStatus, type MotionStatus } from "../motion/useMotion";
 import { refreshWakeLock, requestWakeLockPermission, useWakeLock, type WakeLockSnapshot } from "../wakeLock/useWakeLock";
-import {
-  mockInitialPermissions,
-  mockParticipantCount,
-  type PermissionStatus,
-} from "../mockData";
+import { mockInitialPermissions, type PermissionStatus } from "../mockData";
 
 export interface CalibrationScreenProps {
   color: string;
@@ -136,9 +132,17 @@ export function CalibrationScreen({ color, onColorChange, onReady }: Calibration
 
   return (
     <div className="controller-calibration">
-      <header className="controller-calibration__header">
-        <ParticipantCounter count={mockParticipantCount} />
-      </header>
+      <div className="stage-ambience" aria-hidden="true">
+        <div className="stage-ambience__glow stage-ambience__glow--warm" />
+        <div className="stage-ambience__glow stage-ambience__glow--cool" />
+        <div className="stage-ambience__beams" />
+      </div>
+
+      <div className="controller-calibration__content">
+        <header className="controller-calibration__header">
+          <p className="stage-eyebrow">ペンライトを振ってみよう！</p>
+          <h1 className="stage-title">CALIBRATION</h1>
+        </header>
 
       <Panel className="controller-calibration__panel">
         <h2 className="controller-panel-title">許可ステータス</h2>
@@ -206,19 +210,6 @@ export function CalibrationScreen({ color, onColorChange, onReady }: Calibration
         <ShakeTestArea />
       </Panel>
 
-      <div className="controller-calibration__footer">
-        <IconToggleButton
-          active={ready}
-          onToggle={() => setReady((r) => !r)}
-          activeLabel="準備完了しました"
-          inactiveLabel="準備完了"
-          icon="✓"
-        />
-        <Button onClick={handleReady} disabled={!ready}>
-          ライブへ進む
-        </Button>
-      </div>
-
       {import.meta.env.DEV && (
         <Panel className="controller-calibration__panel">
           <h2 className="controller-panel-title">時刻同期(デバッグ)</h2>
@@ -237,6 +228,24 @@ export function CalibrationScreen({ color, onColorChange, onReady }: Calibration
           </p>
         </Panel>
       )}
+
+        <div className="stage-footer-spacer" aria-hidden="true" />
+      </div>
+
+      <div className="stage-ticket">
+        <div className="controller-calibration__footer">
+          <IconToggleButton
+            active={ready}
+            onToggle={() => setReady((r) => !r)}
+            activeLabel="準備完了しました"
+            inactiveLabel="準備完了"
+            icon="✓"
+          />
+        </div>
+        <Button onClick={handleReady} disabled={!ready}>
+          ライブへ進む
+        </Button>
+      </div>
     </div>
   );
 }

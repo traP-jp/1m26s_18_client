@@ -76,16 +76,16 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
 
   return (
     <div className="viewer-url-input">
-      <div className="viewer-stage-ambience" aria-hidden="true">
-        <div className="viewer-stage-ambience__glow viewer-stage-ambience__glow--warm" />
-        <div className="viewer-stage-ambience__glow viewer-stage-ambience__glow--cool" />
-        <div className="viewer-stage-ambience__beams" />
+      <div className="stage-ambience" aria-hidden="true">
+        <div className="stage-ambience__glow stage-ambience__glow--warm" />
+        <div className="stage-ambience__glow stage-ambience__glow--cool" />
+        <div className="stage-ambience__beams" />
       </div>
 
       <div className="viewer-url-input__content">
         <header className="viewer-url-input__header">
-          <p className="viewer-eyebrow">ライブ上映したい曲を選択してね！</p>
-          <h1 className="viewer-stage-title">SET LIST</h1>
+          <p className="stage-eyebrow">ライブ上映したい曲を選択してね！</p>
+          <h1 className="stage-title">SET LIST</h1>
           <p className="viewer-subtitle">
             気になる曲をタップすると、自動で曲情報を取得します。
           </p>
@@ -155,13 +155,13 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
         )}
 
         {/* 下部に固定バーの分だけ余白を確保 */}
-        <div className="viewer-stage-footer-spacer" aria-hidden="true" />
+        <div className="stage-footer-spacer" aria-hidden="true" />
       </div>
 
-      <div className="viewer-stage-ticket">
-        <div className="viewer-stage-ticket__info">
+      <div className="stage-ticket">
+        <div className="stage-ticket__info">
           {status === "loading" && (
-            <span className="viewer-stage-ticket__status">曲情報を取得中…</span>
+            <span className="stage-ticket__status">曲情報を取得中…</span>
           )}
           {isReady && (
             <div className="viewer-song-card">
@@ -173,7 +173,7 @@ export function UrlInputScreen({ onNext }: UrlInputScreenProps) {
             </div>
           )}
           {!isReady && status !== "loading" && (
-            <span className="viewer-stage-ticket__status viewer-stage-ticket__status--muted">
+            <span className="stage-ticket__status stage-ticket__status--muted">
               曲を選ぶとここに表示されます
             </span>
           )}
