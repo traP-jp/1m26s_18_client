@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Button, ColorPicker, IconToggleButton, ParticipantCounter, Panel, PENLIGHT_PALETTE } from "ui";
+import { Button, ColorPicker, IconToggleButton, Panel, PENLIGHT_PALETTE } from "ui";
 import { useServerTime } from "protocol";
 import { ShakeTestArea } from "../components/ShakeTestArea";
 import { armAudioUnlock, requestMotionPermission, useMotionStatus, type MotionStatus } from "../motion/useMotion";
 import { refreshWakeLock, requestWakeLockPermission, useWakeLock, type WakeLockSnapshot } from "../wakeLock/useWakeLock";
 import {
   mockInitialPermissions,
-  mockParticipantCount,
   type PermissionStatus,
 } from "../mockData";
 
@@ -136,10 +135,6 @@ export function CalibrationScreen({ color, onColorChange, onReady }: Calibration
 
   return (
     <div className="controller-calibration">
-      <header className="controller-calibration__header">
-        <ParticipantCounter count={mockParticipantCount} />
-      </header>
-
       <Panel className="controller-calibration__panel">
         <h2 className="controller-panel-title">許可ステータス</h2>
         <div className="controller-permission-row">
