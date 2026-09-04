@@ -4,5 +4,3 @@ export type PermissionStatus = "granted" | "prompt" | "denied";
 export const mockInitialPermissions: { mic: PermissionStatus } = {
   mic: "prompt",
 };
-
-export const mockBpm = 128;
