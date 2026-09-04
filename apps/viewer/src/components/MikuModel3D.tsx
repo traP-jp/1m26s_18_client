@@ -721,9 +721,9 @@ export function MikuModel3D({
   }, []);
 
   return (
-    <div className="viewer-miku" aria-hidden="true">
-      <div className="viewer-miku__pool" />
-      <div ref={containerRef} className="viewer-miku__canvas" />
+    <div className="viewer-miku">
+      <div className="viewer-miku__pool" aria-hidden="true" />
+      <div ref={containerRef} className="viewer-miku__canvas" aria-hidden="true" />
       {status === "loading" && (
         <span className="viewer-miku__caption">初音ミク 読み込み中…</span>
       )}
