@@ -831,7 +831,8 @@ body,
   color: var(--color-text-muted);
   letter-spacing: 0.05em;
 }
-.viewer-miku__play-button {
+.viewer-miku__play-button,
+.viewer-live__end-button {
   /* ヘッダー(z-index:chrome、高さは可変)より確実に下、かつ.viewer-miku自体の
      高さに左右されないよう、固定pxで上から離す(%指定だと.viewer-mikuが低い
      ビューポートでヘッダーに埋もれてクリックできなくなる)。 */
@@ -851,10 +852,12 @@ body,
   box-shadow: var(--glow-md);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.viewer-miku__play-button:hover {
+.viewer-miku__play-button:hover,
+.viewer-live__end-button:hover {
   box-shadow: var(--glow-lg);
 }
-.viewer-miku__play-button:active {
+.viewer-miku__play-button:active,
+.viewer-live__end-button:active {
   transform: translateX(-50%) scale(0.96);
 }
 .viewer-miku__play-button--stop {
@@ -1020,4 +1023,9 @@ body,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 曲終了後に表示するボタン。開始ボタンと同じ見た目・位置。 */
+.viewer-live__end-button {
+  z-index: var(--z-chrome);
 }
