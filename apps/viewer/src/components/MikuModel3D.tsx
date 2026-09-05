@@ -468,6 +468,9 @@ export interface MikuModel3DProps {
   // 曲側(SongPlayer)がrequestPlay()を呼んでも安全な状態になっているか。
   // 未指定ならtrue扱い(曲データなしのプレビュー用フォールバック)。
   readyToPlay?: boolean;
+  // トラス・スポットライト・スピーカー等のステージ演出を表示するか(既定true)。
+  // モーション単体テスト・録画画面など、Miku単体だけ見たい場合にfalseにする。
+  showStageDecor?: boolean;
 }
 
 export function MikuModel3D({
@@ -483,6 +486,7 @@ export function MikuModel3D({
   segments,
   motionOverride,
   readyToPlay = true,
+  showStageDecor = true,
 }: MikuModel3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<Status>("loading");
@@ -650,15 +654,17 @@ export function MikuModel3D({
         camera.position.set(0, size.y * 0.58, distance);
         camera.lookAt(0, size.y * 0.58, 0);
 
-        attachStageDecor(scene, camera, size.y, stageSpotlights, () => disposed)
-          .then((groups) => {
-            mikuLightsGroup = groups.mikuLightsGroup;
-            revealGroup = groups.revealGroup;
-            speakerRingMaterials = groups.speakerRingMaterials;
-          })
-          .catch((err: unknown) => {
-            console.error("Failed to load stage decor", err);
-          });
+        if (showStageDecor) {
+          attachStageDecor(scene, camera, size.y, stageSpotlights, () => disposed)
+            .then((groups) => {
+              mikuLightsGroup = groups.mikuLightsGroup;
+              revealGroup = groups.revealGroup;
+              speakerRingMaterials = groups.speakerRingMaterials;
+            })
+            .catch((err: unknown) => {
+              console.error("Failed to load stage decor", err);
+            });
+        }
 
         // カメラ内の立ち位置追従: ルートを baseX からの横オフセットで動かす
         const baseX = model.root.position.x;

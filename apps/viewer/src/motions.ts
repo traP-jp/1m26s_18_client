@@ -13,7 +13,7 @@ export const MOTIONS: MotionDefinition[] = [
     id: "helltaker-verse",
     label: "Helltaker風ダンス(verse)",
     url: "/mmd/motions/Helltaker_like_dance_1min_1.vmd",
-    referenceBpm: 120,
+    referenceBpm: 119,
   },
   {
     id: "helltaker-chorus",
