@@ -55,7 +55,14 @@ const POSE_STATUS_LABELS: Record<PoseTrackerStatus, string> = {
   error: "エラー",
 };
 
-export function LiveScreen({ song, bpm, songUrl, connection, participantCount = 0 }: LiveScreenProps) {
+export function LiveScreen({
+  onSongEnd,
+  song,
+  bpm,
+  songUrl,
+  connection,
+  participantCount = 0,
+}: LiveScreenProps) {
   const [reactions, setReactions] = useState<ReactionItem[]>([]);
   const [waveMode, setWaveMode] = useState<PenlightWaveMode>("idle");
   const [songReady, setSongReady] = useState(!songUrl);
@@ -67,6 +74,13 @@ export function LiveScreen({ song, bpm, songUrl, connection, participantCount = 
   const [vmdRecording, setVmdRecording] = useState(false);
   const songPlayerRef = useRef<SongPlayerHandle>(null);
   const handleSongReady = useCallback(() => setSongReady(true), []);
+  // 曲の自然終了で「トップへ戻る」ボタンを表示する。
+  const [songEnded, setSongEnded] = useState(false);
+  const handleSongEnd = useCallback(() => setSongEnded(true), []);
+  const handleReplay = useCallback(() => {
+    setSongEnded(false);
+    songPlayerRef.current?.play();
+  }, []);
   const [lyricLine, setLyricLine] = useState(mockLyricLine);
   const handleLyricLineUpdate = useCallback((line: string) => setLyricLine(line), []);
   const [beatPulse, setBeatPulse] = useState(0);
@@ -209,7 +223,7 @@ export function LiveScreen({ song, bpm, songUrl, connection, participantCount = 
           mirror={poseMirror}
           vmdRecorder={vmdRecorderRef.current}
           bpm={bpm}
-          onPlay={() => songPlayerRef.current?.play()}
+          onPlay={handleReplay}
           onStop={() => songPlayerRef.current?.stop()}
           startAtMs={songUrl ? firstBeatMs : undefined}
           getPositionMs={songUrl ? () => songPlayerRef.current?.getPositionMs() ?? 0 : undefined}
@@ -225,6 +239,8 @@ export function LiveScreen({ song, bpm, songUrl, connection, participantCount = 
             onBeat={handleBeat}
             onPlaybackAnchored={handlePlaybackAnchored}
             onPlaybackError={handlePlaybackError}
+            onSongEnd={handleSongEnd}
+            songDurationMs={song?.durationMs ?? null}
           />
         )}
         {songUrl && liveStartStatus === "error" && liveStartError && (
@@ -296,6 +312,12 @@ export function LiveScreen({ song, bpm, songUrl, connection, participantCount = 
               {pose.status === "error" ? `エラー: ${pose.error ?? ""}` : POSE_STATUS_LABELS[pose.status]}
             </span>
           </div>
+        )}
+
+        {songEnded && (
+          <button type="button" className="viewer-live__end-button" onClick={onSongEnd}>
+            トップへ戻る
+          </button>
         )}
       </div>
 
