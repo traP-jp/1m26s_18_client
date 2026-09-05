@@ -444,9 +444,9 @@
   }
 }
 
-/* Stage: ステージの光演出・タイトル発光・下部固定チケットバー。
-   viewer/controller どちらの画面からも使う共通の「コンサート会場」語彙。 */
+/* Stage: ステージの光演出・タイトル発光・下部固定チケットバー */
 .stage-eyebrow {
+  display: none;
   margin: 0;
   font-size: 0.75rem;
   letter-spacing: 0.08em;

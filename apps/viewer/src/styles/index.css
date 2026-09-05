@@ -53,7 +53,7 @@ body,
   color: var(--color-text-muted);
 }
 
-/* TOPページ */
+/* TOPページ: ボタンではなく画面全体がタップ対象(Press Any Keyの発想)。 */
 .viewer-top {
   position: relative;
   min-height: 100vh;
@@ -62,6 +62,11 @@ body,
   justify-content: center;
   overflow: hidden;
   background: var(--color-bg-primary);
+  cursor: pointer;
+}
+.viewer-top:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -4px;
 }
 .viewer-top__content {
   position: relative;
@@ -77,22 +82,22 @@ body,
   width: min(680px, 80vw);
   filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.55)) drop-shadow(0 0 56px rgba(0, 200, 255, 0.3));
 }
-.viewer-top__cta {
+.viewer-top__hint {
   margin-top: var(--space-3);
-  padding: var(--space-4) var(--space-8);
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  animation: viewer-top-cta-pulse 2.4s ease-in-out infinite;
+  letter-spacing: 0.1em;
+  color: var(--color-accent);
+  text-shadow: var(--glow-sm);
+  animation: viewer-top-hint-pulse 1.8s ease-in-out infinite;
 }
-@keyframes viewer-top-cta-pulse {
+@keyframes viewer-top-hint-pulse {
   0%,
   100% {
-    box-shadow: var(--glow-md);
+    opacity: 0.5;
   }
   50% {
-    box-shadow: var(--glow-lg);
-    transform: scale(1.03);
+    opacity: 1;
   }
 }
 
@@ -675,36 +680,6 @@ body,
   );
   mix-blend-mode: overlay;
   opacity: 0.5;
-}
-.viewer-backscreen__visualizer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 60%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 5px;
-  padding: 0 var(--space-4);
-}
-.viewer-backscreen__bar {
-  width: 5px;
-  height: 12%;
-  border-radius: 2px 2px 0 0;
-  background: linear-gradient(to top, rgba(0, 229, 255, 0.85), rgba(0, 229, 255, 0));
-  animation-name: viewer-backscreen-bar;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-  animation-direction: alternate;
-}
-@keyframes viewer-backscreen-bar {
-  from {
-    height: 8%;
-  }
-  to {
-    height: 82%;
-  }
 }
 .viewer-backscreen__vignette {
   position: absolute;
