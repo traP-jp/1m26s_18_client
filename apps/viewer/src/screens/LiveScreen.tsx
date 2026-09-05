@@ -260,7 +260,7 @@ export function LiveScreen({
             </div>
 
             <div className="viewer-live__header-stats">
-              <ProgressBar segments={mockChorusSections} progressPct={mockPlaybackProgressPct} />
+              {/* <ProgressBar segments={mockChorusSections} progressPct={mockPlaybackProgressPct} /> */}
               <ParticipantCounter count={participantCount} label="参加人数" />
             </div>
           </div>

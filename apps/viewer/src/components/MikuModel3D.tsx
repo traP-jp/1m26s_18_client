@@ -22,6 +22,10 @@ const MODEL_URL = "/mmd/piloula-miku-expo10th.pmx";
 // トラス(鉄格子)の実3Dモデル。ライセンスは public/stagemodel/README.md 参照。
 const TRUSS_MODEL_URL = "/stagemodel/truss.glb";
 
+// ステージ床のワールドY座標。Miku本体・足元の設置マーク・スピーカー列を
+// すべてこの高さに揃えることで、宙に浮いて見えないようにする。
+const STAGE_FLOOR_Y = 5;
+
 interface StageSpotlightConfig {
   color: number;
   xFactor: number; // トラス幅に対する横位置(-0.5〜0.5)
@@ -67,10 +71,42 @@ function updateStageSpotlights(spotlights: StageSpotlight[], timeMs: number): vo
   }
 }
 
+// サビ到達時の演出照明の「点灯」を、ぱっと表示するのではなく明るさが
+// 0→本来値へゆっくり上がるフェードにする(急に光り出すのが不自然という
+// フィードバック対応)。このグループのマテリアルは全てこちらで用意した
+// MeshBasicMaterial/MeshStandardMaterialなので、opacityでのフェードが安全に効く。
+function beginGroupFadeIn(root: THREE.Object3D): void {
+  root.visible = true;
+  root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const mat of materials) {
+      if (mat.userData.fadeBaseOpacity === undefined) {
+        mat.userData.fadeBaseOpacity = mat.opacity;
+      }
+      mat.transparent = true;
+      mat.opacity = 0;
+    }
+  });
+}
+
+function applyGroupFadeIn(root: THREE.Object3D, t: number): void {
+  root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const mat of materials) {
+      const base = (mat.userData.fadeBaseOpacity as number | undefined) ?? 1;
+      mat.opacity = base * t;
+    }
+  });
+}
+
 // 指定した原点・角度からビームの列を1グループ生成する(全グループ共通の
 // ジオメトリ・テクスチャを共有し、形状・質感自体は統一する)。
 function addSpotlightBeams(
-  scene: THREE.Scene,
+  parent: THREE.Object3D,
   stageSpotlights: StageSpotlight[],
   configs: StageSpotlightConfig[],
   coneGeometry: THREE.ConeGeometry,
@@ -87,7 +123,7 @@ function addSpotlightBeams(
     const swayGroup = new THREE.Group();
     swayGroup.position.set(xPos, originY, originZ);
     swayGroup.rotation.x = -forwardTiltRad;
-    scene.add(swayGroup);
+    parent.add(swayGroup);
 
     // 以前は薄く広いhalo(周辺の淡い光の層)+core(芯)の2層構造だったが、
     // haloが画面全体を淡く霞ませてしまうため廃止し、明るいcoreのみ残した。
@@ -120,7 +156,7 @@ function addSpotlightBeams(
 
 // スピーカー1台(暗い箱+同心リングのウーファー2基)。実モデルを使わず組む—
 // 形状・マテリアルは全台共通で、配置だけをクラスタごとに変える。
-function buildSpeakerUnit(size: number): THREE.Group {
+function buildSpeakerUnit(size: number, ringMaterials: THREE.MeshBasicMaterial[]): THREE.Group {
   const group = new THREE.Group();
   // 横向き(幅>高さ)の箱。ウーファー2基も縦積みではなく横に並べる。
   const cabinet = new THREE.Mesh(
@@ -140,6 +176,7 @@ function buildSpeakerUnit(size: number): THREE.Group {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
+  ringMaterials.push(ringMaterial);
   for (const x of [-size * 0.34, size * 0.34]) {
     for (const r of [size * 0.3, size * 0.19]) {
       const ring = new THREE.Mesh(new THREE.RingGeometry(r * 0.75, r, 24), ringMaterial);
@@ -152,7 +189,14 @@ function buildSpeakerUnit(size: number): THREE.Group {
 
 // Mikuの足場代わりのスピーカー列。地面は無くし、彼女の足元を取り囲むように
 // トラス幅(=画面幅)に収まる台数を自動計算して並べる(添付写真の構図を踏襲)。
-function buildSpeakerWall(scene: THREE.Scene, trussWidth: number, modelHeight: number): void {
+// 戻り値のringMaterialsは、最初のサビ以降に呼び出し側が明滅アニメーションを
+// 掛けるために使う(常時表示はそのまま、輝き方だけサビでなめらかに変える)。
+function buildSpeakerWall(
+  parent: THREE.Object3D,
+  trussWidth: number,
+  modelHeight: number,
+  ringMaterials: THREE.MeshBasicMaterial[],
+): void {
   const unitSize = modelHeight * 0.34;
   const unitWidth = unitSize * 1.3; // 横向き箱の幅
   const speakerZ = -modelHeight * 0.05;
@@ -164,9 +208,9 @@ function buildSpeakerWall(scene: THREE.Scene, trussWidth: number, modelHeight: n
 
   for (let i = 0; i < count; i++) {
     const x = (i - (count - 1) / 2) * spacing;
-    const unit = buildSpeakerUnit(unitSize);
-    unit.position.set(x, 5, speakerZ);
-    scene.add(unit);
+    const unit = buildSpeakerUnit(unitSize, ringMaterials);
+    unit.position.set(x, STAGE_FLOOR_Y, speakerZ);
+    parent.add(unit);
   }
 }
 
@@ -221,13 +265,23 @@ function createLightShaftTexture(): THREE.Texture {
 
 // トラス(鉄格子)を画面幅いっぱいに配置し、そこから客席へ向けて統一デザインの
 // スポットライトを扇状に降らせ、地面の代わりにスピーカーの壁を並べる。
+export interface StageRevealGroups {
+  // Miku自身へ向けたキーライト(と足元の設置マーク)。曲再生開始と同時に表示する。
+  mikuLightsGroup: THREE.Group;
+  // それ以外の演出照明(扇状ビーム・客席向けライト)。
+  // 最初のサビに入ったタイミングで表示し、以降は表示したままにする。
+  revealGroup: THREE.Group;
+  // スピーカーのリング。常時表示のまま、最初のサビ以降は明滅アニメーションを付ける。
+  speakerRingMaterials: THREE.MeshBasicMaterial[];
+}
+
 async function attachStageDecor(
   scene: THREE.Scene,
   camera: THREE.PerspectiveCamera,
   modelHeight: number,
   stageSpotlights: StageSpotlight[],
   isDisposed: () => boolean,
-): Promise<void> {
+): Promise<StageRevealGroups> {
   const gltfLoader = new GLTFLoader();
   gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
@@ -239,8 +293,37 @@ async function attachStageDecor(
   const trussWidth = visibleWidthAtStage * 0.96;
   const trussY = modelHeight * 1.5;
 
+  // 演出の段階公開用グループ。曲再生開始/最初のサビ到達のタイミングで
+  // 呼び出し側がvisibleを切り替える(初期状態は両方非表示)。
+  const mikuLightsGroup = new THREE.Group();
+  mikuLightsGroup.visible = false;
+  scene.add(mikuLightsGroup);
+  const revealGroup = new THREE.Group();
+  revealGroup.visible = false;
+  scene.add(revealGroup);
+  const speakerRingMaterials: THREE.MeshBasicMaterial[] = [];
+  const groups: StageRevealGroups = { mikuLightsGroup, revealGroup, speakerRingMaterials };
+
+  // Mikuが立つ床の位置を示す色付きの輪(浮いて見えないようにする設置マーク)。
+  // Miku本体と同じmikuLightsGroupに入れ、同じタイミングでフェードインさせる。
+  const groundRingGeometry = new THREE.RingGeometry(modelHeight * 0.22, modelHeight * 0.27, 48);
+  groundRingGeometry.rotateX(-Math.PI / 2);
+  const groundRing = new THREE.Mesh(
+    groundRingGeometry,
+    new THREE.MeshBasicMaterial({
+      color: 0x8fe0ff,
+      transparent: true,
+      opacity: 0.6,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    }),
+  );
+  groundRing.position.set(0, STAGE_FLOOR_Y + 0.05, 0);
+  mikuLightsGroup.add(groundRing);
+
   const trussGltf = await gltfLoader.loadAsync(TRUSS_MODEL_URL);
-  if (isDisposed()) return;
+  if (isDisposed()) return groups;
 
   const trussScene = trussGltf.scene;
   const localSize = new THREE.Box3().setFromObject(trussScene).getSize(new THREE.Vector3());
@@ -263,7 +346,7 @@ async function attachStageDecor(
   const lightShaftTexture = createLightShaftTexture();
 
   addSpotlightBeams(
-    scene,
+    revealGroup,
     stageSpotlights,
     TOP_SPOTLIGHT_CONFIGS,
     coneGeometry,
@@ -275,7 +358,7 @@ async function attachStageDecor(
     0.05,
   );
   addSpotlightBeams(
-    scene,
+    mikuLightsGroup,
     stageSpotlights,
     MIKU_SPOTLIGHT_CONFIGS,
     coneGeometry,
@@ -287,7 +370,7 @@ async function attachStageDecor(
     0.06,
   );
   addSpotlightBeams(
-    scene,
+    revealGroup,
     stageSpotlights,
     AUDIENCE_SPOTLIGHT_CONFIGS,
     coneGeometry,
@@ -300,7 +383,13 @@ async function attachStageDecor(
     0.5,
   );
 
-  buildSpeakerWall(scene, trussWidth, modelHeight);
+  // スピーカーの発光部分は「ずっと光っていていい」とのフィードバックなので、
+  // 段階公開のrevealGroupには入れずscene直下に置き最初から常時表示する。
+  // スピーカーの発光部分は、他の演出照明と同じく最初のサビでフェードインさせる
+  // (それまでは非表示)。
+  buildSpeakerWall(revealGroup, trussWidth, modelHeight, speakerRingMaterials);
+
+  return groups;
 }
 
 type MotionKey = "verse" | "chorus";
@@ -464,6 +553,19 @@ export function MikuModel3D({
     let activeSegmentStartMs = 0;
     const occurrenceCount: Record<MotionKey, number> = { verse: 0, chorus: 0 };
     const stageSpotlights: StageSpotlight[] = [];
+    // ライブ開始前はMiku非表示。開始と同時にMikuを照らすキーライトを点灯し、
+    // 最初のサビに入ったら残りの演出照明・スピーカーを常時表示に切り替える
+    // (一度表示したら曲が終わるまで戻さない一方通行の演出)。
+    let mikuLightsGroup: THREE.Group | null = null;
+    let revealGroup: THREE.Group | null = null;
+    let speakerRingMaterials: THREE.MeshBasicMaterial[] = [];
+    let mikuFadeStartMs: number | null = null;
+    let revealFadeStartMs: number | null = null;
+    const MIKU_FADE_DURATION_MS = 1200;
+    const REVEAL_FADE_DURATION_MS = 1500;
+    // スピーカーのリングは常時表示のまま、最初のサビ以降だけゆっくり明滅させる
+    // (それまでは元のopacityで静止表示)。
+    const SPEAKER_PULSE_PERIOD_MS = 2600;
     const scene = new THREE.Scene();
     // far=200: ステージ実モデルが奥行きのある室内シーンのため、100だと部屋の
     // 奥壁がクリップされてしまう。
@@ -535,8 +637,10 @@ export function MikuModel3D({
         const center = box.getCenter(new THREE.Vector3());
         model.root.position.x -= center.x;
         model.root.position.z -= center.z;
-        model.root.position.y += 5;
+        model.root.position.y += STAGE_FLOOR_Y;
 
+        // ライブ開始前はMiku本体を隠しておく(演出開始と同時に表示する)。
+        model.root.visible = false;
         scene.add(model.root);
 
         // 1.35→1.9: トラス・スポットライトを画面内に収めるための余白を確保。
@@ -546,9 +650,15 @@ export function MikuModel3D({
         camera.position.set(0, size.y * 0.58, distance);
         camera.lookAt(0, size.y * 0.58, 0);
 
-        attachStageDecor(scene, camera, size.y, stageSpotlights, () => disposed).catch((err: unknown) => {
-          console.error("Failed to load stage decor", err);
-        });
+        attachStageDecor(scene, camera, size.y, stageSpotlights, () => disposed)
+          .then((groups) => {
+            mikuLightsGroup = groups.mikuLightsGroup;
+            revealGroup = groups.revealGroup;
+            speakerRingMaterials = groups.speakerRingMaterials;
+          })
+          .catch((err: unknown) => {
+            console.error("Failed to load stage decor", err);
+          });
 
         // カメラ内の立ち位置追従: ルートを baseX からの横オフセットで動かす
         const baseX = model.root.position.x;
@@ -658,6 +768,47 @@ export function MikuModel3D({
               } else {
                 model.root.rotation.y = Math.sin(timeMs * 0.00015) * 0.35;
               }
+            }
+          }
+          // Miku本体とMiku用ライトは、急に現れるのではなく明るさ0から
+          // ゆっくりフェードインさせる(曲停止で再度隠すことはしない一方通行)。
+          // mikuLightsGroupがattachStageDecorの非同期読み込み待ちで遅れて
+          // 現れた場合も、その時点のフェード進捗から続きを再生する。
+          if (isPlayingRef.current && mikuFadeStartMs === null) {
+            mikuFadeStartMs = timeMs;
+          }
+          if (mikuFadeStartMs !== null) {
+            const t = Math.min(1, (timeMs - mikuFadeStartMs) / MIKU_FADE_DURATION_MS);
+            if (model) {
+              if (!model.root.visible) beginGroupFadeIn(model.root);
+              applyGroupFadeIn(model.root, t);
+            }
+            if (mikuLightsGroup) {
+              if (!mikuLightsGroup.visible) beginGroupFadeIn(mikuLightsGroup);
+              applyGroupFadeIn(mikuLightsGroup, t);
+            }
+          }
+          if (revealFadeStartMs === null && isPlayingRef.current) {
+            const getPosition = getPositionMsRef.current;
+            const firstChorus = segmentsRef.current?.find((seg) => seg.isChorus);
+            // 実曲データが無いプレビュー等では判定できないので、再生開始と同時に見せる。
+            const reached = !getPosition || !firstChorus || getPosition() >= firstChorus.startsAtMs;
+            if (reached && revealGroup) {
+              revealFadeStartMs = timeMs;
+              beginGroupFadeIn(revealGroup);
+            }
+          }
+          if (revealFadeStartMs !== null && revealGroup) {
+            const t = Math.min(1, (timeMs - revealFadeStartMs) / REVEAL_FADE_DURATION_MS);
+            applyGroupFadeIn(revealGroup, t);
+            // スピーカーのリングだけは、フェードインに加えてなめらかな明滅も
+            // 重ねる(他の演出照明と同じくサビまでは非表示 → サビでフェード
+            // インしつつ、そのまま明るさが周期的に揺れ続ける)。
+            const phase = ((timeMs - revealFadeStartMs) / SPEAKER_PULSE_PERIOD_MS) * Math.PI * 2;
+            const pulse = 0.7 + 0.3 * Math.sin(phase);
+            for (const mat of speakerRingMaterials) {
+              const fadeBase = (mat.userData.fadeBaseOpacity as number | undefined) ?? mat.opacity;
+              mat.opacity = fadeBase * t * pulse;
             }
           }
           updateStageSpotlights(stageSpotlights, timeMs);

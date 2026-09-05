@@ -1,12 +1,20 @@
-import { Button } from "ui";
-
 export interface TopScreenProps {
   onStart: () => void;
 }
 
+// 専用の「はじめる」ボタンではなく、画面のどこをタップ/クリックしても
+// 次へ進む「Press Any Key」方式。
 export function TopScreen({ onStart }: TopScreenProps) {
   return (
-    <div className="viewer-top">
+    <div
+      className="viewer-top"
+      role="button"
+      tabIndex={0}
+      onClick={onStart}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onStart();
+      }}
+    >
       <div className="stage-ambience" aria-hidden="true">
         <div className="stage-ambience__glow stage-ambience__glow--warm" />
         <div className="stage-ambience__glow stage-ambience__glow--cool" />
@@ -19,9 +27,7 @@ export function TopScreen({ onStart }: TopScreenProps) {
           src="/logo-syncalive.png"
           alt="シンクアライブ SYNCALIVE feat.初音ミク"
         />
-        <Button className="viewer-top__cta" onClick={onStart}>
-          はじめる ▶
-        </Button>
+        <p className="viewer-top__hint">タップしてはじめる</p>
       </div>
     </div>
   );
