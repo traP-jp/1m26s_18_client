@@ -73,6 +73,12 @@ export function ControllerScreen({ color, onColorChange, beats, connection }: Co
     const elapsedMs = getElapsedMs(shake.onsetTimestamp);
     if (elapsedMs === null) return;
 
+    // サーバーへ中継(host の演出用)。datagram は loss 許容のため失敗は無視する。
+    // ビート判定とは独立に、振った事実だけを送る。
+    if (connection) {
+      void connection.sendDatagram({ type: "shake" }).catch(() => undefined);
+    }
+
     // 振り始め(しきい値を超えた瞬間)がビートにどれだけ近いかで判定
     const timing = judgeBeatByElapsed(elapsedMs, beats);
 

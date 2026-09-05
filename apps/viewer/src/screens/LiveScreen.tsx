@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, ParticipantCounter, PenlightGrid, ReactionOverlay } from "ui";
-import type { PenlightWaveMode, ReactionItem } from "ui";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button, ParticipantCounter, PenlightGrid, ReactionOverlay, colorIdToHex } from "ui";
+import type { PenlightItem, PenlightWaveMode, ReactionItem } from "ui";
 import { StagePlaceholder } from "../components/StagePlaceholder";
 import { BackScreen } from "../components/BackScreen";
 import { MikuModel3D } from "../components/MikuModel3D";
@@ -14,6 +14,7 @@ import type { PlaybackAnchor, SongPlayerHandle } from "../components/SongPlayer"
 import { STAMPS, isBalloonStamp, stampById } from "stamps";
 import type { Stamp } from "stamps";
 import type { SongData } from "../api/songs";
+import { useParticipantPenlights } from "../api/useParticipantPenlights";
 import {
   mockSong,
   mockPenlights,
@@ -53,6 +54,13 @@ const POSE_STATUS_LABELS: Record<PoseTrackerStatus, string> = {
   error: "エラー",
 };
 
+/** Shake後にペンライトを発光+振り動作させる時間 (ms)。振りアニメ(0.6s)と合わせる */
+const SHAKE_HIGHLIGHT_MS = 600;
+/** 全体wave判定の集計窓 (ms) */
+const WAVE_WINDOW_MS = 1000;
+/** この窓内のShake数がこの値以上なら全体を fourFloor にする */
+const WAVE_TRIGGER_COUNT = 3;
+
 export function LiveScreen({
   onSongEnd,
   song,
@@ -83,6 +91,46 @@ export function LiveScreen({
   const handleLyricLineUpdate = useCallback((line: string) => setLyricLine(line), []);
   const [beatPulse, setBeatPulse] = useState(0);
   const handleBeat = useCallback(() => setBeatPulse((n) => n + 1), []);
+
+  // 参加者ごとのペンライト状態 (色 + Shake時刻)。実参加者のみ描画する。
+  const participantPenlights = useParticipantPenlights(connection);
+  // Shakeハイライト失効用の時計。接続中のみ進める。
+  const [nowMs, setNowMs] = useState(() => performance.now());
+  useEffect(() => {
+    if (!connection) return;
+    const timer = window.setInterval(() => setNowMs(performance.now()), 120);
+    return () => window.clearInterval(timer);
+  }, [connection]);
+
+  const participantLights = useMemo<PenlightItem[]>(
+    () =>
+      [...participantPenlights.values()]
+        .sort((a, b) => (a.participantId < b.participantId ? -1 : 1))
+        .map((p) => ({ id: p.participantId, color: colorIdToHex(p.colorId), intensity: 0.6 })),
+    [participantPenlights],
+  );
+  const shakingIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const p of participantPenlights.values()) {
+      if (p.lastShakeAtMs !== null && nowMs - p.lastShakeAtMs < SHAKE_HIGHLIGHT_MS) {
+        ids.add(p.participantId);
+      }
+    }
+    return ids;
+  }, [participantPenlights, nowMs]);
+  const recentShakeCount = useMemo(() => {
+    let count = 0;
+    for (const p of participantPenlights.values()) {
+      if (p.lastShakeAtMs !== null && nowMs - p.lastShakeAtMs < WAVE_WINDOW_MS) {
+        count += 1;
+      }
+    }
+    return count;
+  }, [participantPenlights, nowMs]);
+  // 直近の盛り上がりに応じて会場全体をwaveさせる。部屋なしプレビュー時は mock 表示。
+  const effectiveWaveMode: PenlightWaveMode =
+    recentShakeCount >= WAVE_TRIGGER_COUNT ? "fourFloor" : waveMode;
+  const lights = connection ? participantLights : mockPenlights;
   const serverTime = useServerTime();
   const [liveStartStatus, setLiveStartStatus] = useState<LiveStartStatus>("idle");
   const [liveStartError, setLiveStartError] = useState<string | null>(null);
@@ -300,7 +348,7 @@ export function LiveScreen({
         </header>
 
         <div className="viewer-live__audience">
-          <PenlightGrid lights={mockPenlights} mode={waveMode} />
+          <PenlightGrid lights={lights} mode={effectiveWaveMode} shakingIds={shakingIds} />
         </div>
         <ReactionOverlay items={reactions} onItemDone={removeReaction} />
 

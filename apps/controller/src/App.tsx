@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Redirect, Route, Switch, useLocation, useParams } from "wouter";
-import { Button, CustomCursor, Panel } from "ui";
+import { Button, CustomCursor, Panel, hexToColorId } from "ui";
 import { ServerTimeProvider } from "protocol";
 import { CalibrationScreen } from "./screens/CalibrationScreen";
 import { ControllerScreen } from "./screens/ControllerScreen";
@@ -28,6 +28,16 @@ function RoomLayout() {
   const song = useRoomSong(roomCode);
 
   const connection = room.connection;
+  // ペンライト色をサーバーに同期する。サーバーは解釈せず host へ中継する。
+  // 接続確立直後に現在色を1回送り、以降は変更のたびに送る。
+  useEffect(() => {
+    if (!connection) return;
+    const colorId = hexToColorId(penlightColor);
+    // ColorChange は fire-and-forget (サーバーは応答せずストリームを閉じる)
+    void connection.request({ type: "colorChange", colorId }).catch((error: unknown) => {
+      console.warn("failed to send colorChange", error);
+    });
+  }, [connection, penlightColor]);
   // onClose 内で「今アクティブな接続」かどうかを判定するためのミラー
   const activeConnectionRef = useRef<typeof connection>(null);
   activeConnectionRef.current = connection;
