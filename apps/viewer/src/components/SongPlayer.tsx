@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { Player } from "textalive-app-api";
+import type { Phrase } from "../api/songs";
 
 const TEXTALIVE_TOKEN = import.meta.env.VITE_TEXTALIVE_TOKEN as string | undefined;
 
@@ -61,6 +62,12 @@ export interface SongPlayerProps {
   onSongEnd?: () => void;
   /** 曲長[ms]のフォールバック(`player.video.duration`が取れない場合用) */
   songDurationMs?: number | null;
+  /**
+   * バックエンドから取得した歌詞フレーズ(`startsAtMs`昇順想定)。
+   * TextAliveの歌詞情報は使わない(プライベート楽曲では取得できないため)。
+   * `undefined`/空配列のときは歌詞更新を行わない。
+   */
+  phrases?: Phrase[];
 }
 
 // 原点確定に使う先頭サンプル数。onTimeUpdateは毎フレーム来る想定で、
@@ -85,6 +92,7 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
     onPlaybackError,
     onSongEnd,
     songDurationMs,
+    phrases,
   },
   ref,
 ) {
@@ -97,6 +105,7 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
   const onPlaybackErrorRef = useRef(onPlaybackError);
   const onSongEndRef = useRef(onSongEnd);
   const songDurationMsRef = useRef(songDurationMs);
+  const phrasesRef = useRef(phrases);
   // `stop()`経由の手動停止による`onStop`/`onPause`を無視するためのフラグ。
   // 手動停止では両イベントが対で来ることがあるため、`onPause`では消費せず
   // 覗くだけにし、`onStop`で消費する。
@@ -125,6 +134,9 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
   useEffect(() => {
     songDurationMsRef.current = songDurationMs;
   }, [songDurationMs]);
+  useEffect(() => {
+    phrasesRef.current = phrases;
+  }, [phrases]);
 
   /**
    * 終了イベント(`onStop`/`onPause`)を曲終了として通知すべきか判定する。
@@ -302,9 +314,11 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
     });
     playerRef.current = player;
 
-    // フレーズが新しく発声され始めたらそのフレーズ全文
-    // ビートが1つ進んだらonBeat
-    let lastPhraseTime = -1;
+    // バックエンド由来の歌詞フレーズで発声開始を検知したらそのフレーズ全文
+    // ビートが1つ進んだらonBeat(ビートはTextAliveのまま)
+    let lastPhraseIndex = -1;
+    let prevLyricPosition = -1;
+    let prevPhrases: Phrase[] | undefined;
     let lastBeatTime = -1;
     player.addListener({
       onTimerReady: () => onReadyRef.current?.(),
@@ -335,12 +349,30 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
         if (beats.entered.length > 0) onBeatRef.current?.();
         lastBeatTime = position;
 
-        if (!player.video?.firstPhrase) return;
-        if (lastPhraseTime > position + 1000) lastPhraseTime = -1;
-        const phrases = player.video.findPhraseChange(lastPhraseTime, position);
-        const entered = phrases.entered.at(-1);
-        if (entered) onLyricLineUpdateRef.current?.(entered.text);
-        lastPhraseTime = position;
+        // 歌詞はバックエンドの`phrases`を`timer.position`で引く。
+        // TextAliveの`video.findPhraseChange`は使わない(プライベート楽曲では
+        // 歌詞が取れないため)。`startsAtMs <= position`を満たす末尾フレーズを
+        // 現行とみなし、変わったときだけ全文を通知する。隙間では直前を維持する。
+        const backendPhrases = phrasesRef.current;
+        if (backendPhrases !== prevPhrases) {
+          lastPhraseIndex = -1;
+          prevPhrases = backendPhrases;
+        }
+        if (backendPhrases && backendPhrases.length > 0) {
+          if (prevLyricPosition > position + 1000) lastPhraseIndex = -1;
+          let current = -1;
+          for (let i = backendPhrases.length - 1; i >= 0; i -= 1) {
+            if (backendPhrases[i].startsAtMs <= position) {
+              current = i;
+              break;
+            }
+          }
+          if (current !== -1 && current !== lastPhraseIndex) {
+            onLyricLineUpdateRef.current?.(backendPhrases[current].text);
+          }
+          lastPhraseIndex = current;
+        }
+        prevLyricPosition = position;
       },
     });
 
