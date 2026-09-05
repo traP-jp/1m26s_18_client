@@ -2,6 +2,8 @@ export interface PenlightItem {
   id: string;
   color: string;
   intensity: number;
+  /** Shake通算回数。変わるたび振りアニメを最初から再生し直す */
+  shakeSeq?: number;
 }
 
 export type PenlightWaveMode = "idle" | "fourFloor" | "buildup";
@@ -79,12 +81,14 @@ function PenlightLimb({
   mode,
   phaseIndex,
   shaking,
+  shakeSeq = 0,
 }: {
   side: "left" | "right";
   color: string;
   mode: PenlightWaveMode;
   phaseIndex: number;
   shaking?: boolean;
+  shakeSeq?: number;
 }) {
   const mirror = side === "left" ? -1 : 1;
   const base = BASE[side];
@@ -99,6 +103,8 @@ function PenlightLimb({
 
   return (
     <g
+      // Shakeのたびキーを変えて再マウントし、振りの途中でも即座に振り直す
+      key={shaking ? `${side}-${shakeSeq}` : side}
       className={groupClass}
       style={{
         transformOrigin: `${base.x}px ${base.y}px`,
@@ -120,11 +126,13 @@ function PersonMarkup({
   mode = "idle",
   phaseIndex = 0,
   shaking = false,
+  shakeSeq = 0,
 }: {
   color: string;
   mode?: PenlightWaveMode;
   phaseIndex?: number;
   shaking?: boolean;
+  shakeSeq?: number;
 }) {
   return (
     <svg
@@ -136,8 +144,8 @@ function PersonMarkup({
       <ellipse cx={20} cy={97} rx={13} ry={2.6} className="ui-penlight-grid__shadow" />
       <ellipse cx={20} cy={80} rx={10} ry={15} className="ui-penlight-grid__silhouette" />
 
-      <PenlightLimb side="left" color={color} mode={mode} phaseIndex={phaseIndex} shaking={shaking} />
-      <PenlightLimb side="right" color={color} mode={mode} phaseIndex={phaseIndex} shaking={shaking} />
+      <PenlightLimb side="left" color={color} mode={mode} phaseIndex={phaseIndex} shaking={shaking} shakeSeq={shakeSeq} />
+      <PenlightLimb side="right" color={color} mode={mode} phaseIndex={phaseIndex} shaking={shaking} shakeSeq={shakeSeq} />
     </svg>
   );
 }
@@ -169,7 +177,7 @@ function Person({
         animationDelay: mode === "buildup" ? `${-(phaseIndex % 6) * 0.09}s` : undefined,
       }}
     >
-      <PersonMarkup color={light.color} mode={mode} phaseIndex={phaseIndex} shaking={shaking} />
+      <PersonMarkup color={light.color} mode={mode} phaseIndex={phaseIndex} shaking={shaking} shakeSeq={light.shakeSeq ?? 0} />
     </span>
   );
 }

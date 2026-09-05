@@ -7,6 +7,8 @@ export interface ParticipantPenlight {
   colorId: number;
   /** 直近の ParticipantShake 受信時刻 (performance.now() 基準)。未受信なら null */
   lastShakeAtMs: number | null;
+  /** ParticipantShake の通算受信回数。振りアニメの再発火用キー */
+  shakeSeq: number;
 }
 
 /**
@@ -40,6 +42,7 @@ export function useParticipantPenlights(
               participantId: message.participantId,
               colorId: DEFAULT_PENLIGHT_COLOR_ID,
               lastShakeAtMs: null,
+              shakeSeq: 0,
             });
             return next;
           });
@@ -53,6 +56,7 @@ export function useParticipantPenlights(
               participantId: message.participantId,
               colorId: message.colorId,
               lastShakeAtMs: existing?.lastShakeAtMs ?? null,
+              shakeSeq: existing?.shakeSeq ?? 0,
             });
             return next;
           });
@@ -66,6 +70,7 @@ export function useParticipantPenlights(
               participantId: message.participantId,
               colorId: existing?.colorId ?? DEFAULT_PENLIGHT_COLOR_ID,
               lastShakeAtMs: performance.now(),
+              shakeSeq: (existing?.shakeSeq ?? 0) + 1,
             });
             return next;
           });

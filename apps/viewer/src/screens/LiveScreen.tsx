@@ -54,8 +54,8 @@ const POSE_STATUS_LABELS: Record<PoseTrackerStatus, string> = {
   error: "エラー",
 };
 
-/** Shake後にペンライトを発光+振り動作させる時間 (ms)。振りアニメ(0.6s)と合わせる */
-const SHAKE_HIGHLIGHT_MS = 600;
+/** Shake後にペンライトを発光させる時間 (ms)。単発フリック(0.28s)と合わせる */
+const SHAKE_HIGHLIGHT_MS = 350;
 /** 全体wave判定の集計窓 (ms) */
 const WAVE_WINDOW_MS = 1000;
 /** この窓内のShake数がこの値以上なら全体を fourFloor にする */
@@ -106,7 +106,7 @@ export function LiveScreen({
     () =>
       [...participantPenlights.values()]
         .sort((a, b) => (a.participantId < b.participantId ? -1 : 1))
-        .map((p) => ({ id: p.participantId, color: colorIdToHex(p.colorId), intensity: 0.6 })),
+        .map((p) => ({ id: p.participantId, color: colorIdToHex(p.colorId), intensity: 0.6, shakeSeq: p.shakeSeq })),
     [participantPenlights],
   );
   const shakingIds = useMemo(() => {
