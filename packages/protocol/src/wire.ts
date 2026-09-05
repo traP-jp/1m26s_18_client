@@ -15,8 +15,8 @@ export const EventId = {
   ParticipantStamp: 0x86,
   LiveStarted: 0x87,
   ParticipantColorChange: 0x88,
-  SyncRate: 0x89,
   ParticipantLeft: 0x8a,
+  ParticipantShake: 0x8b,
 } as const;
 
 export type ClientMessage =
@@ -27,7 +27,7 @@ export type ClientMessage =
   | { type: "stamp"; stampId: number }
   | { type: "liveStart"; startTime: number }
   | { type: "colorChange"; colorId: number }
-  | { type: "shake"; detectedAt: number };
+  | { type: "shake" };
 
 export type ServerMessage =
   | { type: "joined"; participantId: string }
@@ -39,7 +39,7 @@ export type ServerMessage =
   | { type: "participantStamp"; participantId: string; stampId: number }
   | { type: "participantColorChange"; participantId: string; colorId: number }
   | { type: "liveStarted"; startTime: number }
-  | { type: "syncRate"; rate: number };
+  | { type: "participantShake"; participantId: string };
 
 export class WireFormatError extends Error {
   constructor(message: string) {
@@ -202,7 +202,6 @@ export function encodeClientMessage(message: ClientMessage): Uint8Array {
       break;
     case "shake":
       writer.u8(EventId.Shake);
-      writer.u64(message.detectedAt);
       break;
   }
   return writer.toUint8Array();
@@ -249,8 +248,8 @@ export function decodeServerMessage(bytes: Uint8Array): ServerMessage {
       message = { type: "participantColorChange", participantId, colorId };
       break;
     }
-    case EventId.SyncRate:
-      message = { type: "syncRate", rate: reader.u8() };
+    case EventId.ParticipantShake:
+      message = { type: "participantShake", participantId: reader.uuid() };
       break;
     default:
       throw new WireFormatError(`unknown server event id: 0x${id.toString(16).padStart(2, "0")}`);

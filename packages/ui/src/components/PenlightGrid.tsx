@@ -9,6 +9,8 @@ export type PenlightWaveMode = "idle" | "fourFloor" | "buildup";
 export interface PenlightGridProps {
   lights: PenlightItem[];
   mode?: PenlightWaveMode;
+  /** Shake直後の参加者id集合。該当ペンライトを発光+振り動作させる */
+  shakingIds?: ReadonlySet<string>;
 }
 
 interface RowConfig {
@@ -31,7 +33,15 @@ const BASE = { left: { x: 15, y: 74 }, right: { x: 25, y: 74 } };
 const ROD_LEAN_DEG = 26;
 const ROD_LENGTH = 46;
 
-function PenlightRod({ base, color }: { base: { x: number; y: number }; color: string }) {
+function PenlightRod({
+  base,
+  color,
+  shaking,
+}: {
+  base: { x: number; y: number };
+  color: string;
+  shaking?: boolean;
+}) {
   const top = base.y - ROD_LENGTH;
   const bodyHalfWidth = 2.75;
   const coreHalfWidth = 1;
@@ -45,7 +55,11 @@ function PenlightRod({ base, color }: { base: { x: number; y: number }; color: s
         rx={bodyHalfWidth}
         className="ui-penlight-grid__rod-body"
         fill={color}
-        style={{ filter: `drop-shadow(0 0 3px ${color}) drop-shadow(0 0 11px ${color})` }}
+        style={{
+          filter: shaking
+            ? `drop-shadow(0 0 6px ${color}) drop-shadow(0 0 24px ${color})`
+            : `drop-shadow(0 0 3px ${color}) drop-shadow(0 0 11px ${color})`,
+        }}
       />
       <rect
         x={base.x - coreHalfWidth}
@@ -64,11 +78,13 @@ function PenlightLimb({
   color,
   mode,
   phaseIndex,
+  shaking,
 }: {
   side: "left" | "right";
   color: string;
   mode: PenlightWaveMode;
   phaseIndex: number;
+  shaking?: boolean;
 }) {
   const mirror = side === "left" ? -1 : 1;
   const base = BASE[side];
@@ -86,13 +102,14 @@ function PenlightLimb({
       className={groupClass}
       style={{
         transformOrigin: `${base.x}px ${base.y}px`,
-        animationDelay: `${-(phaseIndex % 6) * 0.09}s`,
+        // ワンショットの振りは最初から再生するため、wave用の位相ずらしは付けない
+        animationDelay: shaking ? "0s" : `${-(phaseIndex % 6) * 0.09}s`,
       }}
     >
       {/* static outward lean lives here (SVG attribute), independent of the
           CSS-animated swing on the wrapping group above */}
       <g transform={`rotate(${mirror * ROD_LEAN_DEG} ${base.x} ${base.y})`}>
-        <PenlightRod base={base} color={color} />
+        <PenlightRod base={base} color={color} shaking={shaking} />
       </g>
     </g>
   );
@@ -102,10 +119,12 @@ function PersonMarkup({
   color,
   mode = "idle",
   phaseIndex = 0,
+  shaking = false,
 }: {
   color: string;
   mode?: PenlightWaveMode;
   phaseIndex?: number;
+  shaking?: boolean;
 }) {
   return (
     <svg
@@ -117,8 +136,8 @@ function PersonMarkup({
       <ellipse cx={20} cy={97} rx={13} ry={2.6} className="ui-penlight-grid__shadow" />
       <ellipse cx={20} cy={80} rx={10} ry={15} className="ui-penlight-grid__silhouette" />
 
-      <PenlightLimb side="left" color={color} mode={mode} phaseIndex={phaseIndex} />
-      <PenlightLimb side="right" color={color} mode={mode} phaseIndex={phaseIndex} />
+      <PenlightLimb side="left" color={color} mode={mode} phaseIndex={phaseIndex} shaking={shaking} />
+      <PenlightLimb side="right" color={color} mode={mode} phaseIndex={phaseIndex} shaking={shaking} />
     </svg>
   );
 }
@@ -127,14 +146,17 @@ function Person({
   light,
   mode,
   phaseIndex,
+  shaking,
 }: {
   light: PenlightItem;
   mode: PenlightWaveMode;
   phaseIndex: number;
+  shaking: boolean;
 }) {
   const personClass = [
     "ui-penlight-grid__person",
     mode === "buildup" && "ui-penlight-grid__person--buildup",
+    shaking && "ui-penlight-grid__person--shake",
   ]
     .filter(Boolean)
     .join(" ");
@@ -147,7 +169,7 @@ function Person({
         animationDelay: mode === "buildup" ? `${-(phaseIndex % 6) * 0.09}s` : undefined,
       }}
     >
-      <PersonMarkup color={light.color} mode={mode} phaseIndex={phaseIndex} />
+      <PersonMarkup color={light.color} mode={mode} phaseIndex={phaseIndex} shaking={shaking} />
     </span>
   );
 }
@@ -181,7 +203,7 @@ function ForegroundBokeh({ lights, mode }: { lights: PenlightItem[]; mode: Penli
   );
 }
 
-export function PenlightGrid({ lights, mode = "idle" }: PenlightGridProps) {
+export function PenlightGrid({ lights, mode = "idle", shakingIds }: PenlightGridProps) {
   const rows: PenlightItem[][] = ROWS.map(() => []);
   lights.forEach((light, i) => {
     rows[ROW_PATTERN[i % ROW_PATTERN.length]].push(light);
@@ -202,7 +224,13 @@ export function PenlightGrid({ lights, mode = "idle" }: PenlightGridProps) {
           }}
         >
           {rows[rowIndex].map((light, i) => (
-            <Person key={light.id} light={light} mode={mode} phaseIndex={i} />
+            <Person
+              key={light.id}
+              light={light}
+              mode={mode}
+              phaseIndex={i}
+              shaking={shakingIds?.has(light.id) ?? false}
+            />
           ))}
         </div>
       ))}
