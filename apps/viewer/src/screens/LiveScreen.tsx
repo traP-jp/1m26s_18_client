@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, ParticipantCounter, PenlightGrid, ProgressBar, ReactionOverlay } from "ui";
+import { Button, ParticipantCounter, PenlightGrid, ReactionOverlay } from "ui";
 import type { PenlightWaveMode, ReactionItem } from "ui";
 import { StagePlaceholder } from "../components/StagePlaceholder";
 import { BackScreen } from "../components/BackScreen";
@@ -16,8 +16,6 @@ import type { Stamp } from "stamps";
 import type { SongData } from "../api/songs";
 import {
   mockSong,
-  mockChorusSections,
-  mockPlaybackProgressPct,
   mockPenlights,
   mockLyricLine,
 } from "../mockData";
