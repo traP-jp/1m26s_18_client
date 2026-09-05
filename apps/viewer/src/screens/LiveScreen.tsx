@@ -263,7 +263,7 @@ export function LiveScreen({
             </div>
           </div>
 
-          <div className="viewer-live__wave-demo">
+          <div className="viewer-live__wave-demo" style={{ display: "none" }}>
             {(Object.keys(WAVE_MODE_LABELS) as PenlightWaveMode[]).map((mode) => (
               <Button
                 key={mode}

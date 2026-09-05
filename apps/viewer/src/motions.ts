@@ -23,13 +23,13 @@ export const MOTIONS: MotionDefinition[] = [
   },
   {
     id: "pose-capture-test",
-    label: "pose capture",
+    label: "otima-test",
     url: "/mmd/motions/pose-capture.vmd",
     referenceBpm: 120,
   },
   {
     id: "ingrid",
-    label: "Ingrid",
+    label: "勝利モーション(last pose)",
     url: "/mmd/motions/ingrid.vmd",
     referenceBpm: 120,
   },
