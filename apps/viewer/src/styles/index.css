@@ -812,34 +812,38 @@ body,
   letter-spacing: 0.05em;
 }
 .viewer-miku__play-button {
-  /* ヘッダー(z-index:chrome、高さは可変)より確実に下、かつ.viewer-miku自体の
-     高さに左右されないよう、固定pxで上から離す(%指定だと.viewer-mikuが低い
-     ビューポートでヘッダーに埋もれてクリックできなくなる)。 */
+  /* 目立たせすぎない: 画面右下の隅に小さく置く。ヘッダーや客席と重ならない
+     固定pxオフセット。 */
+  /* 観客ペンライト(.viewer-live__audience, z-index: var(--z-audience))は
+     .viewer-mikuより手前に重なるスタッキングコンテキストなので、観客の帯より
+     上、かつ目立たない右下寄りに置く(観客の帯にかかると当たり判定を奪われて
+     クリックできなくなる)。 */
   position: absolute;
-  top: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: var(--space-2) var(--space-5);
+  bottom: 190px;
+  right: 14px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full);
-  border: none;
-  background: var(--color-accent);
-  color: #041014;
-  font-weight: 700;
-  font-size: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(10, 14, 18, 0.55);
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
+  font-size: 0.72rem;
   cursor: pointer;
   pointer-events: auto;
-  box-shadow: var(--glow-md);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: none;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, background 0.15s ease;
 }
 .viewer-miku__play-button:hover {
-  box-shadow: var(--glow-lg);
+  opacity: 1;
+  background: rgba(10, 14, 18, 0.8);
 }
 .viewer-miku__play-button:active {
-  transform: translateX(-50%) scale(0.96);
+  transform: scale(0.96);
 }
 .viewer-miku__play-button--stop {
-  background: #ff4d6d;
-  color: #1a0006;
+  border-color: rgba(255, 77, 109, 0.4);
+  color: rgba(255, 150, 170, 0.85);
 }
 
 .viewer-song-player {
