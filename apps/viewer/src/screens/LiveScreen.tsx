@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, ParticipantCounter, PenlightGrid, ProgressBar, ReactionOverlay } from "ui";
+import { Button, ParticipantCounter, PenlightGrid, ReactionOverlay } from "ui";
 import type { PenlightWaveMode, ReactionItem } from "ui";
 import { StagePlaceholder } from "../components/StagePlaceholder";
 import { BackScreen } from "../components/BackScreen";
@@ -11,12 +11,11 @@ import { useServerTime } from "protocol";
 import type { RoomConnection } from "protocol";
 import { SongPlayer } from "../components/SongPlayer";
 import type { PlaybackAnchor, SongPlayerHandle } from "../components/SongPlayer";
-import { stampImages } from "../stamps";
+import { STAMPS, isBalloonStamp, stampById } from "stamps";
+import type { Stamp } from "stamps";
 import type { SongData } from "../api/songs";
 import {
   mockSong,
-  mockChorusSections,
-  mockPlaybackProgressPct,
   mockPenlights,
   mockLyricLine,
 } from "../mockData";
@@ -54,7 +53,14 @@ const POSE_STATUS_LABELS: Record<PoseTrackerStatus, string> = {
   error: "エラー",
 };
 
-export function LiveScreen({ song, bpm, songUrl, connection, participantCount = 0 }: LiveScreenProps) {
+export function LiveScreen({
+  onSongEnd,
+  song,
+  bpm,
+  songUrl,
+  connection,
+  participantCount = 0,
+}: LiveScreenProps) {
   const [reactions, setReactions] = useState<ReactionItem[]>([]);
   const [waveMode, setWaveMode] = useState<PenlightWaveMode>("idle");
   const [songReady, setSongReady] = useState(!songUrl);
@@ -66,6 +72,13 @@ export function LiveScreen({ song, bpm, songUrl, connection, participantCount = 
   const [vmdRecording, setVmdRecording] = useState(false);
   const songPlayerRef = useRef<SongPlayerHandle>(null);
   const handleSongReady = useCallback(() => setSongReady(true), []);
+  // 曲の自然終了で「トップへ戻る」ボタンを表示する。
+  const [songEnded, setSongEnded] = useState(false);
+  const handleSongEnd = useCallback(() => setSongEnded(true), []);
+  const handleReplay = useCallback(() => {
+    setSongEnded(false);
+    songPlayerRef.current?.play();
+  }, []);
   const [lyricLine, setLyricLine] = useState(mockLyricLine);
   const handleLyricLineUpdate = useCallback((line: string) => setLyricLine(line), []);
   const [beatPulse, setBeatPulse] = useState(0);
@@ -159,23 +172,39 @@ export function LiveScreen({ song, bpm, songUrl, connection, participantCount = 
     URL.revokeObjectURL(url);
   };
 
+  // 風船スタンプは浮遊、それ以外はポップのアニメーションで流す
+  const pushReaction = useCallback((stamp: Stamp) => {
+    const kind: ReactionItem["kind"] = isBalloonStamp(stamp) ? "balloon" : "stamp";
+    reactionSeq += 1;
+    setReactions((prev) => [
+      ...prev,
+      { id: `r${reactionSeq}`, kind, imageSrc: stamp.src, leftPct: 10 + Math.random() * 80 },
+    ]);
+  }, []);
+
+  // 参加者が送ったスタンプ(サーバーが ParticipantStamp として中継)を流す。
+  // stamp id はサーバーでは解釈されず、`stamps` パッケージの添字がそのまま id
   useEffect(() => {
-    if (stampImages.length === 0) return;
+    if (!connection) return;
+    return connection.subscribeServerMessage((message) => {
+      if (message.type !== "participantStamp") return;
+      const stamp = stampById(message.stampId);
+      if (!stamp) {
+        console.warn("ignoring unknown stamp id", message.stampId);
+        return;
+      }
+      pushReaction(stamp);
+    });
+  }, [connection, pushReaction]);
+
+  // 部屋なしプレビュー時はランダムなリアクションを流して見た目を確認できるようにする
+  useEffect(() => {
+    if (connection || STAMPS.length === 0) return;
     const timer = window.setInterval(() => {
-      const kind: ReactionItem["kind"] = Math.random() > 0.5 ? "stamp" : "balloon";
-      reactionSeq += 1;
-      setReactions((prev) => [
-        ...prev,
-        {
-          id: `r${reactionSeq}`,
-          kind,
-          imageSrc: stampImages[Math.floor(Math.random() * stampImages.length)],
-          leftPct: 10 + Math.random() * 80,
-        },
-      ]);
+      pushReaction(STAMPS[Math.floor(Math.random() * STAMPS.length)]);
     }, 1800);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [connection, pushReaction]);
 
   const removeReaction = (id: string) => {
     setReactions((prev) => prev.filter((item) => item.id !== id));
@@ -192,7 +221,7 @@ export function LiveScreen({ song, bpm, songUrl, connection, participantCount = 
           mirror={poseMirror}
           vmdRecorder={vmdRecorderRef.current}
           bpm={bpm}
-          onPlay={() => songPlayerRef.current?.play()}
+          onPlay={handleReplay}
           onStop={() => songPlayerRef.current?.stop()}
           startAtMs={songUrl ? firstBeatMs : undefined}
           getPositionMs={songUrl ? () => songPlayerRef.current?.getPositionMs() ?? 0 : undefined}
@@ -208,6 +237,8 @@ export function LiveScreen({ song, bpm, songUrl, connection, participantCount = 
             onBeat={handleBeat}
             onPlaybackAnchored={handlePlaybackAnchored}
             onPlaybackError={handlePlaybackError}
+            onSongEnd={handleSongEnd}
+            songDurationMs={song?.durationMs ?? null}
           />
         )}
         {songUrl && liveStartStatus === "error" && liveStartError && (
@@ -279,6 +310,12 @@ export function LiveScreen({ song, bpm, songUrl, connection, participantCount = 
               {pose.status === "error" ? `エラー: ${pose.error ?? ""}` : POSE_STATUS_LABELS[pose.status]}
             </span>
           </div>
+        )}
+
+        {songEnded && (
+          <button type="button" className="viewer-live__end-button" onClick={onSongEnd}>
+            トップへ戻る
+          </button>
         )}
       </div>
 

@@ -39,7 +39,10 @@ export async function closeHostConnection(): Promise<void> {
   active = null;
   if (!current) return;
   try {
-    (await current.connection).close();
+    const conn = await current.connection;
+    // 意図的な切断なので、呼び出し側の「予期せぬ切断」ハンドラを発火させない
+    conn.onClose = null;
+    conn.close();
   } catch {
     // 接続確立前に失敗していた場合は閉じる対象がない
   }

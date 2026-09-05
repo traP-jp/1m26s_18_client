@@ -48,6 +48,8 @@ export function useHostRoom(room: RoomInfo | null): HostRoomState {
       });
     return () => {
       cancelled = true;
+      // 部屋スコープを外れた(アンマウント・部屋切替)ら接続を切断する
+      void closeHostConnection();
     };
   }, [room]);
 

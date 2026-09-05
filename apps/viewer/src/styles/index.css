@@ -811,13 +811,12 @@ body,
   color: var(--color-text-muted);
   letter-spacing: 0.05em;
 }
-.viewer-miku__play-button {
-  /* 目立たせすぎない: 画面右下の隅に小さく置く。ヘッダーや客席と重ならない
-     固定pxオフセット。 */
-  /* 観客ペンライト(.viewer-live__audience, z-index: var(--z-audience))は
-     .viewer-mikuより手前に重なるスタッキングコンテキストなので、観客の帯より
-     上、かつ目立たない右下寄りに置く(観客の帯にかかると当たり判定を奪われて
-     クリックできなくなる)。 */
+
+.viewer-miku__play-button,
+.viewer-live__end-button {
+  /* ヘッダー(z-index:chrome、高さは可変)より確実に下、かつ.viewer-miku自体の
+     高さに左右されないよう、固定pxで上から離す(%指定だと.viewer-mikuが低い
+     ビューポートでヘッダーに埋もれてクリックできなくなる)。 */
   position: absolute;
   bottom: 190px;
   right: 14px;
@@ -834,12 +833,14 @@ body,
   opacity: 0.7;
   transition: opacity 0.15s ease, background 0.15s ease;
 }
-.viewer-miku__play-button:hover {
-  opacity: 1;
-  background: rgba(10, 14, 18, 0.8);
+
+.viewer-miku__play-button:hover,
+.viewer-live__end-button:hover {
+  box-shadow: var(--glow-lg);
 }
-.viewer-miku__play-button:active {
-  transform: scale(0.96);
+.viewer-miku__play-button:active,
+.viewer-live__end-button:active {
+  transform: translateX(-50%) scale(0.96);
 }
 .viewer-miku__play-button--stop {
   border-color: rgba(255, 77, 109, 0.4);
@@ -1004,4 +1005,9 @@ body,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 曲終了後に表示するボタン。開始ボタンと同じ見た目・位置。 */
+.viewer-live__end-button {
+  z-index: var(--z-chrome);
 }

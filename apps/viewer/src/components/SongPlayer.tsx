@@ -47,6 +47,20 @@ export interface SongPlayerProps {
   onPlaybackAnchored?: (anchor: PlaybackAnchor) => void;
   /** 再生開始・原点確定に失敗したときに呼ばれる */
   onPlaybackError?: (message: string) => void;
+  /**
+   * 楽曲が最後まで再生されたときに呼ばれる。ポーリングはせず、
+   * TextAliveのイベントハンドラ(`onStop`/`onPause`)のみで検知する。
+   *
+   * 注意: 自然終了のイベントはバックエンドで異なる。`mediaFinish`由来の
+   * `onStop`になる場合と、末尾到達で`onPause`(位置は0に巻き戻る)に
+   * なる場合がある。後者と手動停止・途中の一時停止を区別するため、
+   * `onPause`時は`onTimeUpdate`で記録した最終位置が末尾付近のときだけ
+   * 終了とみなす。長さは`player.video.duration`を優先し、なければ
+   * `songDurationMs`を使う。`stop()`経由の手動停止は内部フラグで抑制する。
+   */
+  onSongEnd?: () => void;
+  /** 曲長[ms]のフォールバック(`player.video.duration`が取れない場合用) */
+  songDurationMs?: number | null;
 }
 
 // 原点確定に使う先頭サンプル数。onTimeUpdateは毎フレーム来る想定で、
@@ -56,10 +70,22 @@ const ANCHOR_SAMPLE_COUNT = 5;
 const ANCHOR_TIMEOUT_MS = 3000;
 // この再生位置を超えたサンプルは原点計算に使わない。開始直後のみ対象。
 const ANCHOR_MAX_POSITION_MS = 10000;
+// `onPause`を曲終了とみなす末尾マージン[ms]。onTimeUpdateの最終通知と
+// 実際の末尾には多少の乖離があるため余裕を持つ。
+const SONG_END_MARGIN_MS = 2000;
 
 // 音声再生専用
 export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function SongPlayer(
-  { songUrl, onReady, onLyricLineUpdate, onBeat, onPlaybackAnchored, onPlaybackError },
+  {
+    songUrl,
+    onReady,
+    onLyricLineUpdate,
+    onBeat,
+    onPlaybackAnchored,
+    onPlaybackError,
+    onSongEnd,
+    songDurationMs,
+  },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,6 +95,15 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
   const onBeatRef = useRef(onBeat);
   const onPlaybackAnchoredRef = useRef(onPlaybackAnchored);
   const onPlaybackErrorRef = useRef(onPlaybackError);
+  const onSongEndRef = useRef(onSongEnd);
+  const songDurationMsRef = useRef(songDurationMs);
+  // `stop()`経由の手動停止による`onStop`/`onPause`を無視するためのフラグ。
+  // 手動停止では両イベントが対で来ることがあるため、`onPause`では消費せず
+  // 覗くだけにし、`onStop`で消費する。
+  const manualStopRef = useRef(false);
+  // `onTimeUpdate`で見た最新の再生位置。自然終了時の`onPause`は位置が
+  // 0に巻き戻った後で届くため、終了付近まで進んでいたかの判定に使う。
+  const lastPositionMsRef = useRef(-1);
   useEffect(() => {
     onReadyRef.current = onReady;
   }, [onReady]);
@@ -84,6 +119,49 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
   useEffect(() => {
     onPlaybackErrorRef.current = onPlaybackError;
   }, [onPlaybackError]);
+  useEffect(() => {
+    onSongEndRef.current = onSongEnd;
+  }, [onSongEnd]);
+  useEffect(() => {
+    songDurationMsRef.current = songDurationMs;
+  }, [songDurationMs]);
+
+  /**
+   * 終了イベント(`onStop`/`onPause`)を曲終了として通知すべきか判定する。
+   * 手動停止由来なら`onStop`到達時にフラグを消費して捨てる。
+   * `viaStop`がfalse(`onPause`)の場合はフラグを消費しない。
+   */
+  const maybeNotifySongEnd = (viaStop: boolean) => {
+    if (manualStopRef.current) {
+      if (viaStop) manualStopRef.current = false;
+      return;
+    }
+    let durationMs: number | null = null;
+    try {
+      const videoDuration = playerRef.current?.video?.duration;
+      if (typeof videoDuration === "number" && videoDuration > 0) {
+        durationMs = videoDuration;
+      }
+    } catch {
+      // video情報の取得に失敗したらフォールバックに任せる
+    }
+    if (durationMs === null) {
+      const fallback = songDurationMsRef.current;
+      if (typeof fallback === "number" && fallback > 0) durationMs = fallback;
+    }
+    if (viaStop && durationMs === null) {
+      // 長さ不明でも、手動でない`onStop`は自然終了とみなす。
+      onSongEndRef.current?.();
+      return;
+    }
+    if (durationMs !== null && lastPositionMsRef.current >= durationMs - SONG_END_MARGIN_MS) {
+      onSongEndRef.current?.();
+    }
+  };
+  // refのみを触るため、毎レンダーの新しい実体を使い回してよい。
+  // player生成effectからは最新の実体を参照できるようref経由で呼ぶ。
+  const maybeNotifySongEndRef = useRef(maybeNotifySongEnd);
+  maybeNotifySongEndRef.current = maybeNotifySongEnd;
 
   // 再生原点の計測状態。play()での同期開始とonTimeUpdateでの非同期収集、
   // タイムアウト処理の3箇所から触るためrefで共有する。
@@ -157,6 +235,9 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
         // 前回の計測残渣を捨て、requestPlay()と同刻に計測開始する。
         // awaitを挟まず同期的に呼ぶこと(iOS Safariのジェスチャー判定のため)。
         cancelAnchorLocked();
+        // 次の再生では自然終了を検知できるよう、手動停止フラグと最終位置をクリアする。
+        manualStopRef.current = false;
+        lastPositionMsRef.current = -1;
         const accepted = player.requestPlay();
         if (!accepted) {
           onPlaybackErrorRef.current?.("再生リクエストが受理されませんでした");
@@ -186,6 +267,8 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
     },
     stop: () => {
       cancelAnchorLocked();
+      // 手動停止による`onStop`は曲終了として扱わない。
+      manualStopRef.current = true;
       try {
         playerRef.current?.requestStop();
       } catch (err) {
@@ -225,7 +308,16 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
     let lastBeatTime = -1;
     player.addListener({
       onTimerReady: () => onReadyRef.current?.(),
+      onStop: () => {
+        maybeNotifySongEndRef.current(true);
+      },
+      onPause: () => {
+        // 末尾到達で`onPause`になるバックエンドがあるため、終了付近の
+        // 一時停止は曲終了とみなす(手動停止由来はフラグで除外)。
+        maybeNotifySongEndRef.current(false);
+      },
       onTimeUpdate: (position: number) => {
+        if (position >= 0) lastPositionMsRef.current = position;
         // 再生原点の実測: 先頭サンプルから origin = t - pos を集める。
         // requestPlay()呼び出し時刻は使わない(非同期遅延を含むため)。
         const anchorState = anchorRef.current;
@@ -263,6 +355,8 @@ export const SongPlayer = forwardRef<SongPlayerHandle, SongPlayerProps>(function
         window.clearTimeout(anchorStateAtMount.timeoutId);
         anchorStateAtMount.timeoutId = null;
       }
+      manualStopRef.current = false;
+      lastPositionMsRef.current = -1;
       playerRef.current = null;
     };
   }, [songUrl]);

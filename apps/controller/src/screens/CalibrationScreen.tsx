@@ -256,7 +256,7 @@ export function CalibrationScreen({ color, onColorChange, onReady, canProceed }:
             icon="✓"
           />
         </div>
-        <Button onClick={handleReady} disabled={!ready}>
+        <Button onClick={handleReady} disabled={!ready || !canProceed}>
           ライブへ進む
         </Button>
       </div>

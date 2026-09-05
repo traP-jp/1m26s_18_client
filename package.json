@@ -13,7 +13,9 @@
     "dev:controller": "npm run dev -w apps/controller",
     "build": "npm run build -w apps/viewer && npm run build -w apps/controller",
     "lint": "npm run lint -w apps/viewer && npm run lint -w apps/controller",
-    "preview": "node scripts/preview.mjs"
+    "preview": "node scripts/preview.mjs",
+    "stamps:fetch": "node scripts/stamps.mjs fetch",
+    "stamps": "node scripts/stamps.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

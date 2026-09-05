@@ -10,6 +10,8 @@ apps/
   controller/   スマホ操作画面(待機キャリブレーション → コントローラー)
 packages/
   ui/           デザイントークン(CSS変数)・共通コンポーネント
+  protocol/     サーバーとのワイヤ形式・WebTransport 接続
+  stamps/       traQ から取得したスタンプ画像と id 対応表(生成物)
 ```
 
 現段階は 静的実装(WebSocket・バックエンド接続なし、ダミーデータのみ)。
@@ -30,7 +32,7 @@ npm run dev:controller # controller のみ
 
 毎回クリックで遷移しなくても、パスで直接その画面を開けます。
 
-- viewer: `/`(URL入力) / `/lobby` / `/live` / `/motion-test`
+- viewer: `/`(トップ) / `/select`(曲選択) / `/room/<コード>/lobby`(待機ロビー) / `/room/<コード>/live`(ライブ視聴) / `/motion-test`
 - controller: `/`(参加コード入力) / `/room/<4桁のコード>`(キャリブレーション。QR参加もここに着地) / `/room/<4桁のコード>/controller`
 
 ```
@@ -42,9 +44,9 @@ npm run preview -- controller calibration
 npm run preview -- controller controller
 ```
 
-(devサーバーが起動済みであることが前提です。手動でURLを開く場合は `http://localhost:5173/live` のように直接指定しても同じです。)
+(devサーバーが起動済みであることが前提です。手動でURLを開く場合は `http://localhost:5173/motion-test` のように直接指定しても同じです。)
 
-注: controller の calibration / controller は実際に作成した部屋のコードで開く必要があります。
+注: viewer の lobby / live は部屋作成後に発行される `/room/<コード>/...` で開く必要があります(直接開くと曲選択に戻ります)。controller の calibration / controller は実際に作成した部屋のコードで開く必要があります。
 
 ### モーション単体テスト(`motion-test`)
 
@@ -59,6 +61,28 @@ npm run preview -- viewer motion-test
 「このモーションの想定BPM(referenceBpm)」と「テストする曲のBPM」を調整しながら実際の
 再生速度を確認できます。モーションの追加方法・本番のverse/chorusローテーションの仕組みは
 [motions.md](../motions.md) を参照。
+
+## スタンプ画像の取得(traQ)
+
+コントローラーから送れるスタンプの画像は traQ の API(`GET /api/v3/stamps/{stampId}/image`)から取得して
+`packages/stamps/assets/` に配置します。取得にはログインが必要なので、リポジトリ直下に `.env` を作って
+認証情報を設定してください(`.env.example` 参照。`TRAQ_TOKEN` か `TRAQ_USERNAME` / `TRAQ_PASSWORD` のどちらか)。
+
+```
+cp .env.example .env                 # 認証情報を記入
+npm run stamps -- search miku        # traQ 上のスタンプを名前で探す
+npm run stamps -- add mikuehehe      # 名前(または UUID)で追加して画像を取得
+npm run stamps -- remove mikuehehe   # 設定から外す
+npm run stamps -- list               # 設定済みのスタンプと stamp id
+npm run stamps:fetch                 # 設定どおりに取得し直す
+```
+
+設定は [`packages/stamps/stamps.config.json`](./packages/stamps/stamps.config.json) の `stamps` に
+traQ のスタンプ名(または UUID)で列挙されており、`add` / `remove` はこのファイルを書き換えます。
+配列の順番がそのままワイヤ上の stamp id(u8、0 始まり、最大 256 個)になり、
+`packages/stamps/src/manifest.ts` が生成されます。`remove` や並び替えで後続の id が詰まるため、
+controller と viewer は必ず同じ manifest でビルドしてください。取得した画像と manifest はコミットして
+構いません(未取得だとコントローラーにスタンプが表示されません)。
 
 ## 部屋参加QRコード
 

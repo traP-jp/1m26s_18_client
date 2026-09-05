@@ -9,6 +9,8 @@ export * from "./components/ParticipantCounter";
 export * from "./components/RoomJoinCard";
 export * from "./components/PenlightGrid";
 export * from "./components/ColorPicker";
+export * from "./components/StampPicker";
+export * from "./components/StampPalette";
 export * from "./components/ReactionOverlay";
 export * from "./components/IconToggleButton";
 export * from "./components/CustomCursor";
