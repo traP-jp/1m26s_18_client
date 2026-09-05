@@ -239,6 +239,7 @@ export function LiveScreen({
             onPlaybackError={handlePlaybackError}
             onSongEnd={handleSongEnd}
             songDurationMs={song?.durationMs ?? null}
+            phrases={song?.type === "complete" ? song.phrases : undefined}
           />
         )}
         {songUrl && liveStartStatus === "error" && liveStartError && (
