@@ -296,20 +296,14 @@
    人自体は接地させたまま、肩を軸にした腕グループの回転だけで振る。
    wave系の無限アニメより後ろに定義し、振り中はそちらを上書きする。 */
 .ui-penlight-grid__person--shake .ui-penlight-grid__arm-group {
-  animation: ui-penlight-shake-wave 0.6s ease-in-out;
+  animation: ui-penlight-shake-wave 0.28s ease-out;
 }
 @keyframes ui-penlight-shake-wave {
   0% {
     transform: rotate(0);
   }
-  25% {
-    transform: rotate(-26deg);
-  }
-  50% {
-    transform: rotate(22deg);
-  }
-  75% {
-    transform: rotate(-12deg);
+  35% {
+    transform: rotate(-28deg);
   }
   100% {
     transform: rotate(0);
